@@ -4,24 +4,31 @@ import StatsCards from "@/components/dashboard/StatsCards";
 import EquityChart from "@/components/dashboard/EquityChart";
 import RecentTrades from "@/components/dashboard/RecentTrades";
 import RightSidebar from "@/components/widgets/RightSidebar";
+import MonthlyPerformanceChart from "@/components/dashboard/MonthlyPerformance";
+import FundedAccountProgress from "@/components/dashboard/FundedAccountProgress";
 
 export default function DashboardPage() {
   return (
     <DashboardLayout>
-      <div className="grid grid-cols-12 gap-6">
-        {/* Main */}
-        <div className="col-span-9 space-y-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <div className="space-y-6 xl:col-span-9">
           <WelcomeBanner />
-
           <StatsCards />
 
-          <EquityChart />
+          <div className="grid gap-6 xl:grid-cols-12">
+            <div className="xl:col-span-7">
+              <EquityChart />
+            </div>
+            <div className="xl:col-span-5 space-y-6">
+              <FundedAccountProgress />
+              <MonthlyPerformanceChart />
+            </div>
+          </div>
 
           <RecentTrades />
         </div>
 
-        {/* Right Sidebar */}
-        <div className="col-span-3">
+        <div className="xl:col-span-3">
           <RightSidebar />
         </div>
       </div>

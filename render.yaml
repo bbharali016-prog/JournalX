@@ -1,0 +1,31 @@
+# Render deployment config
+services:
+  - type: web
+    name: journalx-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 1440
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRO_PRICE_ID
+        sync: false
+      - key: STRIPE_ELITE_PRICE_ID
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: FRONTEND_URL
+        value: https://journalx.vercel.app
+    healthCheckPath: /health

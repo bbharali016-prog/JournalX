@@ -12,9 +12,12 @@ from alembic import context
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+db_url = os.getenv("DATABASE_URL")
+if db_url:
+    db_url = db_url.replace("%", "%%")
 config.set_main_option(
     "sqlalchemy.url",
-    os.getenv("DATABASE_URL"),
+    db_url,
 )
 
 # Interpret the config file for Python logging.
@@ -27,6 +30,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from app.db.database import Base
+from app.models.ai_usage import AIUsage
 from app.models.user import User
 from app.models.trade import Trade
 

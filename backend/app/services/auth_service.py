@@ -7,7 +7,8 @@ from app.core.security import verify_password
 
 
 def authenticate_user(db: Session, email: str, password: str):
-    user = db.query(User).filter(User.email == email).first()
+    email_lower = email.lower().strip()
+    user = db.query(User).filter(User.email == email_lower).first()
 
     if not user:
         return None
@@ -18,14 +19,15 @@ def authenticate_user(db: Session, email: str, password: str):
     return user
 
 def create_user(db: Session, user: UserRegister):
-    existing = db.query(User).filter(User.email == user.email).first()
+    email_lower = user.email.lower().strip()
+    existing = db.query(User).filter(User.email == email_lower).first()
  
     if existing:
         return None
 
     db_user = User(
         full_name=user.full_name,
-        email=user.email,
+        email=email_lower,
         hashed_password=hash_password(user.password),
     )
 

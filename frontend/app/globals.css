@@ -123,8 +123,103 @@
   }
   body {
     @apply bg-background text-foreground;
+    background:
+      radial-gradient(circle at top left, rgba(124,58,237,0.14), transparent 28%),
+      radial-gradient(circle at top right, rgba(34,211,238,0.10), transparent 22%),
+      linear-gradient(180deg, #050b18 0%, #060c17 100%);
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .trading-calendar .react-calendar {
+    width: 100% !important;
+    max-width: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 24px !important;
+    background: #09101d !important;
+    color: #e2e8f0 !important;
+    padding: 22px !important;
+  }
+
+  .trading-calendar .react-calendar__navigation {
+    margin-bottom: 12px;
+  }
+
+  .trading-calendar .react-calendar__navigation button {
+    color: #e2e8f0 !important;
+    min-width: 40px;
+    background: transparent !important;
+    border-radius: 12px;
+    font-weight: 700;
+  }
+
+  .trading-calendar .react-calendar__navigation button:enabled:hover,
+  .trading-calendar .react-calendar__navigation button:enabled:focus {
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .trading-calendar .react-calendar__month-view__weekdays {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    color: #94a3b8 !important;
+    margin-bottom: 6px;
+  }
+
+  .trading-calendar .react-calendar__month-view__weekdays abbr {
+    text-decoration: none;
+  }
+
+  .trading-calendar .react-calendar__tile {
+    min-height: 104px;
+    border-radius: 18px;
+    padding: 0.9rem 0.45rem;
+    color: #cbd5e1 !important;
+    background: rgba(15, 23, 42, 0.42) !important;
+    font-size: 0.95rem;
+  }
+
+  .trading-calendar .react-calendar__tile:enabled:hover,
+  .trading-calendar .react-calendar__tile:enabled:focus {
+    background: rgba(139, 92, 246, 0.18) !important;
+  }
+
+  .trading-calendar .react-calendar__tile--now {
+    background: rgba(99, 102, 241, 0.22) !important;
+    color: #fff !important;
+    box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.35);
+  }
+
+  .trading-calendar .react-calendar__month-view__days__day--neighboringMonth {
+    color: #475569 !important;
+  }
+
+  .trading-calendar .calendar-profit {
+    background: rgba(16, 185, 129, 0.18) !important;
+    color: #d1fae5 !important;
+  }
+
+  .trading-calendar .calendar-loss {
+    background: rgba(248, 113, 113, 0.18) !important;
+    color: #ffe4e6 !important;
+  }
+
+  .trading-calendar .calendar-pnl {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .trading-calendar .calendar-pnl-profit {
+    color: #34d399;
+  }
+
+  .trading-calendar .calendar-pnl-loss {
+    color: #fb7185;
   }
 }

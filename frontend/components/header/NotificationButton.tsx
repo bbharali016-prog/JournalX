@@ -6,9 +6,10 @@ export default function NotificationButton() {
     <Button
       variant="ghost"
       size="icon"
-      className="text-slate-300 hover:bg-slate-800"
+      className="relative border border-white/10 text-slate-300 hover:bg-white/5"
     >
       <Bell size={20} />
+      <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-violet-500" />
     </Button>
   );
 }
