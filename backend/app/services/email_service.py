@@ -50,7 +50,7 @@ def send_otp_email(email: str, otp: str, purpose: str):
     )
 
     try:
-        context = ssl.create_default_context(cafile="/etc/ssl/cert.pem")
+        context = ssl.create_default_context()
 
         with urllib.request.urlopen(request, timeout=12, context=context) as response:
             return 200 <= response.status < 300
