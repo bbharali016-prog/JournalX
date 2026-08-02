@@ -79,5 +79,40 @@ def root():
 
 @app.get("/health")
 def health_check():
-    """Health check endpoint — used by UptimeRobot / cron-job.org to prevent Render sleep."""
-    return {"status": "ok", "service": "JournalX API"}
+    """Health check endpoint with database diagnostics to troubleshoot Render connection issues."""
+    db_status = "unknown"
+    error_msg = None
+    try:
+        from sqlalchemy import text
+        from app.db.database import SessionLocal
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        db_status = "connected"
+    except Exception as e:
+        db_status = "failed"
+        import traceback
+        error_msg = traceback.format_exc()
+
+    db_url = os.getenv("DATABASE_URL")
+    db_url_info = None
+    if db_url:
+        db_url_info = {
+            "length": len(db_url),
+            "scheme": db_url.split(":")[0] if ":" in db_url else "none",
+            "has_percent": "%" in db_url,
+            "has_at": "@" in db_url,
+            "at_count": db_url.count("@"),
+            "masked": db_url[:15] + "..." + db_url[-15:] if len(db_url) > 30 else "too short"
+        }
+
+    return {
+        "status": "ok" if db_status == "connected" else "error",
+        "service": "JournalX API",
+        "db": {
+            "status": db_status,
+            "info": db_url_info,
+            "error": error_msg
+        }
+    }
+
