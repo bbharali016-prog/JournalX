@@ -14,5 +14,5 @@ COPY . .
 
 EXPOSE 8000
 
-# Run database migrations first, then start the server
-CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Migrations run automatically inside FastAPI lifespan (app/main.py)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

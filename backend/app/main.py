@@ -1,8 +1,27 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import os
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.security import hash_password
+
+
+def run_migrations():
+    """Run alembic migrations on startup."""
+    try:
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+        print("✅ Database migrations applied successfully")
+    except Exception as e:
+        print(f"⚠️ Migration warning (tables may already exist): {e}")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    run_migrations()
+    yield
 
 from app.api.v1.auth import router as auth_router
 from app.api.v1.users import router as users_router
@@ -18,6 +37,7 @@ from app.api.v1.stripe import router as stripe_router
 app = FastAPI(
     title="JournalX API",
     version="1.0.0",
+    lifespan=lifespan,
 )
 os.makedirs("uploads", exist_ok=True)
 
