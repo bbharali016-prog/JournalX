@@ -6,6 +6,7 @@ export interface CurrentUser {
   email: string;
   profile_image_url?: string;
   plan?: string;
+  is_admin?: boolean;
 }
 
 export async function getCurrentUser() {

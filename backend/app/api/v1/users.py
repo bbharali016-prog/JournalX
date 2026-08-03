@@ -29,6 +29,7 @@ def me(current_user: User = Depends(get_current_user)):
         "email": current_user.email,
         "profile_image_url": current_user.profile_image_url,
         "plan": current_user.plan or "Free",
+        "is_admin": current_user.is_admin,
     }
 
 

@@ -33,6 +33,7 @@ from app.api.v1.mt5 import router as mt5_router
 from app.api.v1.accounts import router as accounts_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.stripe import router as stripe_router
+from app.api.v1.admin import router as admin_router
 
 app = FastAPI(
     title="JournalX API",
@@ -56,6 +57,7 @@ app.include_router(mt5_router)
 app.include_router(accounts_router)
 app.include_router(reports_router)
 app.include_router(stripe_router)
+app.include_router(admin_router)
 
 app.add_middleware(
     CORSMiddleware,

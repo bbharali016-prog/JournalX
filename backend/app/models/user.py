@@ -23,5 +23,6 @@ class User(Base):
     metaapi_account_id = Column(String, nullable=True)
     profile_image_url = Column(String, nullable=True)
     plan = Column(String, default="Free")
+    is_admin = Column(Boolean, default=False, nullable=False)
 
     accounts = relationship("Account", back_populates="user", cascade="all, delete-orphan")
