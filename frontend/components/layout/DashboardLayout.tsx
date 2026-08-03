@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import Sidebar from "@/components/sidebar/Sidebar";
@@ -11,6 +11,7 @@ import { AccountProvider } from "@/components/auth/AccountContext";
 function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useCurrentUser();
   const router = useRouter();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -35,10 +36,10 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative flex min-h-screen">
-      <Sidebar />
+      <Sidebar mobileOpen={mobileSidebarOpen} setMobileOpen={setMobileSidebarOpen} />
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <Header />
+        <Header onMenuToggle={() => setMobileSidebarOpen(!mobileSidebarOpen)} />
 
         <div className="flex-1 px-4 pb-6 pt-4 lg:px-6">
           {children}

@@ -4,11 +4,15 @@ import Link from "next/link";
 import NotificationButton from "./NotificationButton";
 import UserMenu from "./UserMenu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Crown, CalendarRange, Sparkles } from "lucide-react";
+import { ChevronDown, Crown, CalendarRange, Sparkles, Menu } from "lucide-react";
 import { useCurrentUser } from "@/components/auth/UserContext";
 import { useActiveAccount } from "@/components/auth/AccountContext";
 
-export default function Header() {
+interface HeaderProps {
+  onMenuToggle: () => void;
+}
+
+export default function Header({ onMenuToggle }: HeaderProps) {
   const { user } = useCurrentUser();
   const { accounts, selectedAccountId, setSelectedAccountId } = useActiveAccount();
   const displayName = user?.full_name ?? "Trader";
@@ -17,6 +21,16 @@ export default function Header() {
     <header className="sticky top-0 z-20 border-b border-white/5 bg-[#050b18]/80 px-4 py-4 backdrop-blur-xl lg:px-6">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-4">
+          {/* Mobile hamburger menu toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onMenuToggle}
+            className="border border-white/10 text-slate-300 hover:bg-white/5 lg:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
           <div className="hidden flex-col sm:flex">
             <p className="text-sm text-slate-400">Welcome back,</p>
             <h1 className="text-2xl font-semibold tracking-tight text-white">
@@ -91,7 +105,7 @@ export default function Header() {
 
           <NotificationButton />
 
-          <div className="hidden lg:block">
+          <div>
             <UserMenu />
           </div>
 

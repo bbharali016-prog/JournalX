@@ -54,7 +54,7 @@ export default function RecentTrades() {
       </CardHeader>
 
       <CardContent>
-        <div className="overflow-hidden rounded-2xl border border-white/8">
+        <div className="overflow-x-auto rounded-2xl border border-white/8">
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">

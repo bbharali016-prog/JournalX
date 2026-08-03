@@ -39,7 +39,12 @@ const menu = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  setMobileOpen?: (open: boolean) => void;
+}
+
+export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const { user } = useCurrentUser();
@@ -60,15 +65,45 @@ export default function Sidebar() {
     : undefined;
 
   return (
-    <aside
-      className={`${
-        collapsed ? "w-20" : "w-64"
-      } relative flex min-h-screen flex-col border-r border-white/5 bg-[#081122]/90 backdrop-blur-xl transition-all duration-300`}
-    >
-      <div className="flex items-center justify-between border-b border-white/5 px-4 py-5">
-        {!collapsed ? (
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-lg shadow-violet-500/20">
+    <>
+      {/* Mobile backdrop overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileOpen?.(false)}
+        />
+      )}
+
+      <aside
+        className={`${
+          collapsed ? "lg:w-20" : "lg:w-64"
+        } fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-white/5 bg-[#081122]/90 backdrop-blur-xl transition-all duration-300 lg:sticky lg:z-0 lg:flex
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+      >
+        <div className="flex items-center justify-between border-b border-white/5 px-4 py-5">
+          {!collapsed ? (
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-lg shadow-violet-500/20">
+                <Image
+                  src="/brand/journalfx-logo.png"
+                  alt="JournalFX"
+                  width={48}
+                  height={48}
+                  className="h-full w-full object-contain"
+                  priority
+                />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold tracking-tight text-white">
+                  JournalFX
+                </h1>
+                <p className="text-xs text-slate-400">
+                  All-in-One Trading Journal
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-lg shadow-violet-500/20">
               <Image
                 src="/brand/journalfx-logo.png"
                 alt="JournalFX"
@@ -78,59 +113,41 @@ export default function Sidebar() {
                 priority
               />
             </div>
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight text-white">
-                JournalFX
-              </h1>
-              <p className="text-xs text-slate-400">
-                All-in-One Trading Journal
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-lg shadow-violet-500/20">
-            <Image
-              src="/brand/journalfx-logo.png"
-              alt="JournalFX"
-              width={48}
-              height={48}
-              className="h-full w-full object-contain"
-              priority
-            />
-          </div>
-        )}
+          )}
 
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="rounded-lg border border-white/10 p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
-        >
-          {collapsed ? <ChevronRight /> : <ChevronLeft />}
-        </button>
-      </div>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="rounded-lg border border-white/10 p-2 text-slate-400 transition hover:bg-white/5 hover:text-white lg:block hidden"
+          >
+            {collapsed ? <ChevronRight /> : <ChevronLeft />}
+          </button>
+        </div>
 
-      <nav className="flex-1 px-3 py-4">
-        {menu.map((item) => {
-          const Icon = item.icon;
-          const active = pathname === item.href;
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+          {menu.map((item) => {
+            const Icon = item.icon;
+            const active = pathname === item.href;
 
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`mb-1 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-all
-                ${
-                  active
-                    ? "border border-violet-400/20 bg-gradient-to-r from-violet-500/20 to-cyan-500/10 text-white shadow-lg shadow-violet-500/10"
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
-                }`}
-            >
-              <Icon size={18} />
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setMobileOpen?.(false)}
+                className={`mb-1 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-all
+                  ${
+                    active
+                      ? "border border-violet-400/20 bg-gradient-to-r from-violet-500/20 to-cyan-500/10 text-white shadow-lg shadow-violet-500/10"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white"
+                  }`}
+              >
+                <Icon size={18} />
 
-              {!collapsed && <span>{item.name}</span>}
-            </Link>
-          );
-        })}
-      </nav>
+                {(mobileOpen || !collapsed) && <span>{item.name}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+
 
       {!collapsed && (
         <div className="px-4 pb-4">
@@ -207,5 +224,6 @@ export default function Sidebar() {
         </div>
       )}
     </aside>
+    </>
   );
 }

@@ -140,7 +140,7 @@ export default function EquityChart() {
 
   return (
     <div className="rounded-3xl border border-white/8 bg-[#0a1020] p-6 shadow-xl shadow-black/15">
-      <div className="mb-5 flex items-center justify-between gap-4">
+      <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold text-white">
