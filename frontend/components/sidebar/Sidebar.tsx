@@ -30,7 +30,7 @@ const menu = [
   { name: "Journal", href: "/journal", icon: BookOpen },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Risk", href: "/risk", icon: Shield },
-  { name: "Funded", href: "/funded", icon: Wallet },
+  { name: "Accounts", href: "/accounts", icon: Wallet },
   { name: "Calendar", href: "/calendar", icon: CalendarDays },
   { name: "Reports", href: "/reports", icon: BadgeDollarSign },
   { name: "AI Coach", href: "/ai", icon: Brain },

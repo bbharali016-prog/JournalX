@@ -46,7 +46,7 @@ const inputClass =
 const selectClass =
   "w-full mt-1.5 rounded-xl border border-white/10 bg-[#050b18] px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500/50";
 
-export default function FundedPage() {
+export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
@@ -216,7 +216,7 @@ export default function FundedPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl border border-white/8 bg-white/[0.03] p-6 shadow-xl shadow-black/15">
           <div>
             <div className="flex items-center gap-3">
-              <p className="text-sm text-slate-400">Funded Accounts</p>
+              <p className="text-sm text-slate-400">Trading Accounts</p>
               <Badge className="bg-violet-500/10 text-violet-300 border border-violet-500/20 text-xs">
                 {accounts.length} {accounts.length === 1 ? "Account" : "Accounts"}
               </Badge>
