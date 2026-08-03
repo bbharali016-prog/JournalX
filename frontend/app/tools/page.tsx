@@ -85,7 +85,7 @@ const instrumentPipValues: Record<string, number> = {
 const riskPresets = [0.5, 1, 2, 3, 5];
 
 export default function ToolsPage() {
-  const [showSocial, setShowSocial] = useState(true);
+  const [showSocial, setShowSocial] = useState(false);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [accountBalance, setAccountBalance] = useState(10000);
   const [riskPercent, setRiskPercent] = useState(1);
@@ -126,22 +126,22 @@ export default function ToolsPage() {
   return (
     <DashboardLayout>
       <div className="grid gap-6">
-        <div className="mb-2 flex items-center justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-600/10 text-blue-400">
-              <Wrench className="h-8 w-8" />
+        <div className="mb-2 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-600/10 text-blue-400">
+              <Wrench className="h-6 w-6 sm:h-8 sm:w-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-white">
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
                 Trading Tools
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-400">
+              <p className="mt-1.5 max-w-2xl text-xs sm:text-sm text-slate-400">
                 Professional calculators and utilities to enhance your trading workflow
               </p>
             </div>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-2 sm:gap-4 self-start md:self-auto">
             <SummaryBox value="3" label="AVAILABLE" />
             <SummaryBox value="4" label="COMING SOON" />
           </div>
@@ -459,71 +459,15 @@ export default function ToolsPage() {
           ))}
         </div>
       </div>
-
-      {showSocial ? (
-        <div className="fixed bottom-6 right-6 z-50 w-[330px] overflow-hidden rounded-2xl border border-blue-500/25 bg-[#091019] shadow-2xl shadow-black/40">
-          <div className="flex items-center justify-between px-4 pt-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 text-sm font-semibold text-white">
-                TFB
-              </div>
-              <span className="text-lg font-semibold text-white">
-                TradeFXBook
-              </span>
-            </div>
-            <button
-              onClick={() => setShowSocial(false)}
-              className="rounded-full border border-white/10 p-1 text-slate-400 transition hover:bg-white/5 hover:text-white"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="px-4 pb-4 pt-3">
-            <div className="rounded-2xl bg-[linear-gradient(135deg,#0d1730_0%,#0a1020_100%)] px-5 py-6 shadow-inner shadow-black/20">
-              <p className="text-2xl font-semibold leading-tight text-white">
-                Follow us
-                <br />
-                on our Socials
-              </p>
-              <div className="mt-4 flex justify-end">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600/80 text-white">
-                  <ArrowRight className="h-7 w-7" />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <button className="rounded-xl bg-gradient-to-r from-pink-500 to-orange-400 px-4 py-3 text-sm font-semibold text-white">
-                Instagram
-              </button>
-              <button className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900">
-                Twitter / X
-              </button>
-            </div>
-
-            <button
-              onClick={() => setShowSocial(false)}
-              className="mt-3 w-full text-center text-xs text-slate-500 transition hover:text-slate-300"
-            >
-              Do not show again
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      <button className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500 text-white shadow-lg shadow-cyan-500/30 xl:right-6">
-        <Wrench className="h-6 w-6" />
-      </button>
     </DashboardLayout>
   );
 }
 
 function SummaryBox({ value, label }: { value: string; label: string }) {
   return (
-    <div className="min-w-[130px] rounded-2xl border border-white/8 bg-white/[0.04] px-6 py-5 text-center">
-      <p className="text-3xl font-semibold text-blue-500">{value}</p>
-      <p className="mt-1 text-sm tracking-[0.2em] text-slate-500">{label}</p>
+    <div className="min-w-[100px] sm:min-w-[130px] rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 sm:px-6 sm:py-5 text-center">
+      <p className="text-2xl sm:text-3xl font-semibold text-blue-500">{value}</p>
+      <p className="mt-0.5 sm:mt-1 text-[9px] sm:text-xs tracking-[0.2em] text-slate-500">{label}</p>
     </div>
   );
 }
