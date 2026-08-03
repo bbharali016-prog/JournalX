@@ -39,6 +39,11 @@ const menu = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
+const adminMenu = [
+  { name: "Admin Panel", href: "/admin", icon: Shield },
+  { name: "Settings", href: "/settings", icon: Settings },
+];
+
 interface SidebarProps {
   mobileOpen?: boolean;
   setMobileOpen?: (open: boolean) => void;
@@ -124,7 +129,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
         </div>
 
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          {menu.map((item) => {
+          {(user?.is_admin ? adminMenu : menu).map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
 
@@ -149,7 +154,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
         </nav>
 
 
-      {!collapsed && (
+      {!collapsed && !user?.is_admin && (
         <div className="px-4 pb-4">
           {user?.plan?.toLowerCase() === "elite" ? (
             <div className="rounded-3xl border border-emerald-400/20 bg-gradient-to-br from-emerald-500/20 via-[#0a1826] to-[#040912] p-5 shadow-2xl shadow-emerald-950/20">

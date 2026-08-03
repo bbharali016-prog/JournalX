@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Header from "@/components/header/Header";
@@ -11,13 +11,26 @@ import { AccountProvider } from "@/components/auth/AccountContext";
 function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useCurrentUser();
   const router = useRouter();
+  const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
+    if (!loading) {
+      if (!user) {
+        router.push("/login");
+      } else if (user.is_admin) {
+        // Admins can only visit /admin and /settings
+        if (pathname !== "/admin" && pathname !== "/settings") {
+          router.push("/admin");
+        }
+      } else {
+        // Normal users cannot visit /admin
+        if (pathname === "/admin") {
+          router.push("/dashboard");
+        }
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, pathname]);
 
   if (loading) {
     return (
