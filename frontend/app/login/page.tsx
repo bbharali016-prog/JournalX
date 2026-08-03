@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { Mail, Lock, Eye, EyeOff, ShieldCheck, TrendingUp, Sparkles, BarChart3, ArrowRight, X, AlertTriangle, Settings } from "lucide-react";
 
 import { login, socialLogin } from "@/services/api/auth";
@@ -54,7 +55,14 @@ export default function LoginPage() {
           localStorage.setItem("token", data.access_token);
           router.push("/dashboard");
         } catch (err) {
-          setSocialError("Google redirect authentication failed. Try again.");
+          const detail = axios.isAxiosError(err)
+            ? err.response?.data?.detail
+            : null;
+          setSocialError(
+            typeof detail === "string"
+              ? detail
+              : "Google redirect authentication failed. Try again."
+          );
         } finally {
           setSocialLoading(false);
         }

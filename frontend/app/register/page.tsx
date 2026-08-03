@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { Mail, Lock, Eye, EyeOff, User, ShieldCheck, Sparkles, BarChart3, Target, ArrowRight, X, AlertTriangle, Settings } from "lucide-react";
 
 import { register, socialLogin } from "@/services/api/auth";
@@ -57,7 +58,14 @@ export default function RegisterPage() {
           localStorage.setItem("token", data.access_token);
           router.push("/dashboard");
         } catch (err) {
-          setSocialError("Google redirect authentication failed. Try again.");
+          const detail = axios.isAxiosError(err)
+            ? err.response?.data?.detail
+            : null;
+          setSocialError(
+            typeof detail === "string"
+              ? detail
+              : "Google redirect authentication failed. Try again."
+          );
         } finally {
           setSocialLoading(false);
         }
@@ -108,8 +116,15 @@ export default function RegisterPage() {
         localStorage.removeItem("pending_verify_otp");
       }
       router.push("/verify-otp");
-    } catch {
-      setError("Could not create account. Try another email.");
+    } catch (err) {
+      const detail = axios.isAxiosError(err)
+        ? err.response?.data?.detail
+        : null;
+      setError(
+        typeof detail === "string"
+          ? detail
+          : "Could not create account. Please try again."
+      );
     } finally {
       setLoading(false);
     }
