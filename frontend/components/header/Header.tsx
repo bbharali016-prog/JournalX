@@ -18,17 +18,17 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   const displayName = user?.full_name ?? "Trader";
 
   return (
-    <header className="sticky top-0 z-20 border-b border-white/5 bg-[#050b18]/80 px-4 py-4 backdrop-blur-xl lg:px-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-4">
+    <header className="sticky top-0 z-20 border-b border-white/5 bg-[#050b18]/80 px-3 py-3 backdrop-blur-xl sm:px-4 sm:py-4 lg:px-6">
+      <div className="flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           {/* Mobile hamburger menu toggle */}
           <Button
             variant="ghost"
             size="icon"
             onClick={onMenuToggle}
-            className="border border-white/10 text-slate-300 hover:bg-white/5 lg:hidden"
+            className="h-9 w-9 shrink-0 border border-white/10 text-slate-300 hover:bg-white/5 lg:hidden"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-4.5 w-4.5" />
           </Button>
 
           <div className="hidden flex-col sm:flex">
@@ -42,9 +42,9 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 lg:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
           {/* Account Switcher */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             <select
               value={selectedAccountId === null ? "all" : selectedAccountId}
               onChange={(e) =>
@@ -52,7 +52,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                   e.target.value === "all" ? null : Number(e.target.value)
                 )
               }
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-2 text-sm font-semibold text-slate-200 outline-none cursor-pointer focus:border-violet-500/50"
+              className="rounded-xl border border-white/10 bg-[#0b1220] px-2 py-1.5 text-xs font-semibold text-slate-200 outline-none cursor-pointer focus:border-violet-500/50 sm:rounded-2xl sm:px-4 sm:py-2 sm:text-sm"
             >
               <option value="all" className="bg-[#0b1220] text-slate-200">
                 All Accounts
@@ -63,7 +63,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                   value={acc.id}
                   className="bg-[#0b1220] text-slate-200"
                 >
-                  {acc.name} ({acc.platform})
+                  {acc.name}
                 </option>
               ))}
             </select>
@@ -109,7 +109,8 @@ export default function Header({ onMenuToggle }: HeaderProps) {
             <UserMenu />
           </div>
 
-          <button className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10">
+          {/* Hidden on mobile, shown on md+ screens */}
+          <button className="hidden md:inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10">
             Jul 1 - Jul 7, 2025
             <ChevronDown className="h-4 w-4 text-slate-400" />
           </button>
