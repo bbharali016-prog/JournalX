@@ -304,42 +304,6 @@ def social_login(payload: SocialLoginRequest, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/test-login-diag")
-def test_login_diag(db: Session = Depends(get_db)):
-    """Diagnostic route to test login components and return traceback on error."""
-    import traceback
-    steps = {}
-    try:
-        # Step 1: Query DB
-        steps["step1_db_query"] = "pending"
-        from app.models.user import User
-        user = db.query(User).first()
-        steps["step1_db_query"] = f"success: found user {user.email if user else 'none'}"
 
-        # Step 2: Test password hashing context
-        steps["step2_passlib"] = "pending"
-        from app.core.security import pwd_context
-        # Check if bcrypt/argon2 works
-        dummy_hash = pwd_context.hash("dummy")
-        pwd_context.verify("dummy", dummy_hash)
-        steps["step2_passlib"] = "success"
 
-        # Step 3: Test JWT encoding
-        steps["step3_jwt"] = "pending"
-        from app.core.security import create_access_token
-        token = create_access_token({"sub": "test@example.com"})
-        steps["step3_jwt"] = "success"
-
-        return {
-            "status": "success",
-            "steps": steps
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "failed_step": list(steps.keys())[-1] if steps else "setup",
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-            "steps": steps
-        }
 
