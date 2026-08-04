@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -284,7 +285,11 @@ export default function Home() {
     <PublicLayout>
       <section className="relative mx-auto max-w-[1420px] px-5 py-5 lg:px-10">
         <section className="grid items-center gap-10 pb-8 pt-16 lg:grid-cols-[0.82fr_1.18fr] lg:pt-20">
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
             <div className="mb-7 inline-flex items-center gap-2 rounded-md border border-teal-300/40 bg-teal-400/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-teal-200">
               <span className="h-1.5 w-1.5 rounded-full bg-teal-300" />
               Built for serious traders
@@ -330,12 +335,24 @@ export default function Home() {
                 </span>
               ))}
             </div>
-          </div>
+          </motion.div>
 
-          <DashboardProductFrame />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.15 }}
+          >
+            <DashboardProductFrame />
+          </motion.div>
         </section>
 
-        <section className="grid border-y border-white/10 py-5 md:grid-cols-3 lg:grid-cols-5">
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6 }}
+          className="grid border-y border-white/10 py-5 md:grid-cols-3 lg:grid-cols-5"
+        >
           {trustMetrics.map((metric, index) => (
             <div
               key={metric.label}
@@ -350,18 +367,30 @@ export default function Home() {
               </div>
             </div>
           ))}
-        </section>
+        </motion.section>
 
         <section id="features" className="py-16 border-b border-white/10 scroll-mt-24">
-          <div className="text-center space-y-4 mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center space-y-4 mb-12"
+          >
             <span className="inline-flex items-center gap-2 rounded-full border border-teal-500/30 bg-teal-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-teal-300">
               Features
             </span>
             <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
               Powerful Tools to Improve Your Performance
             </h2>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.15 }}
+            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto"
+          >
             {features.map((feature) => (
               <GlassCard key={feature.title} className="p-6">
                 <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-teal-300/25 bg-teal-400/10 text-teal-300">
@@ -371,10 +400,16 @@ export default function Home() {
                 <p className="mt-3 text-sm leading-7 text-slate-300">{feature.description}</p>
               </GlassCard>
             ))}
-          </div>
+          </motion.div>
         </section>
         <section id="pricing" className="py-16 border-b border-white/10 scroll-mt-24">
-          <div className="text-center space-y-5 max-w-3xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center space-y-5 max-w-3xl mx-auto mb-16"
+          >
             <span className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-violet-300">
               Pricing
             </span>
@@ -415,10 +450,16 @@ export default function Home() {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Pricing Cards Grid */}
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 items-stretch max-w-5xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.15 }}
+            className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 items-stretch max-w-5xl mx-auto mb-16"
+          >
             {pricingPlans.map((plan) => {
               const price = billingPeriod === "monthly" ? plan.priceMonthly : plan.priceYearly;
               const isPopular = plan.popular;
@@ -489,10 +530,16 @@ export default function Home() {
                 </GlassCard>
               );
             })}
-          </div>
+          </motion.div>
 
           {/* Trust Badges */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto border-y border-white/10 py-6 mb-16 bg-white/[0.01]">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto border-y border-white/10 py-6 mb-16 bg-white/[0.01]"
+          >
             {trustBadges.map((badge) => {
               const BadgeIcon = badge.icon;
               return (
@@ -507,10 +554,16 @@ export default function Home() {
                 </div>
               );
             })}
-          </div>
+          </motion.div>
 
           {/* FAQ & Promise Section */}
-          <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr] max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="grid gap-8 lg:grid-cols-[1.3fr_1fr] max-w-5xl mx-auto"
+          >
             {/* FAQ Accordion */}
             <div>
               <h2 className="text-xl font-bold text-white mb-5">Frequently asked questions</h2>
@@ -568,12 +621,18 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         <section id="resources" className="py-16 border-b border-white/10 scroll-mt-24">
           {/* Top Hero Section */}
-          <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] items-center max-w-5xl mx-auto mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] items-center max-w-5xl mx-auto mb-12"
+          >
             <div className="space-y-5">
               <span className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-violet-300">
                 Resources
@@ -612,10 +671,16 @@ export default function Home() {
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Filter Tabs */}
-          <div className="flex flex-wrap items-center justify-center gap-2 border-b border-white/10 pb-5 mb-10 max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-wrap items-center justify-center gap-2 border-b border-white/10 pb-5 mb-10 max-w-5xl mx-auto"
+          >
             {resourceTabs.map((tab) => (
               <button
                 key={tab}
@@ -630,10 +695,16 @@ export default function Home() {
                 {tab}
               </button>
             ))}
-          </div>
+          </motion.div>
 
           {/* Guide Cards Grid */}
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.15 }}
+            className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto mb-16"
+          >
             {resourceCards.map((card) => {
               const CardIcon = card.icon;
               return (
@@ -669,10 +740,16 @@ export default function Home() {
                 </div>
               );
             })}
-          </div>
+          </motion.div>
 
           {/* Newsletter subscription panel */}
-          <div className="rounded-2xl border border-cyan-300/15 bg-gradient-to-r from-[#080d1c]/95 to-[#16122d]/90 p-6 sm:p-8 shadow-2xl mb-12 max-w-5xl mx-auto relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="rounded-2xl border border-cyan-300/15 bg-gradient-to-r from-[#080d1c]/95 to-[#16122d]/90 p-6 sm:p-8 shadow-2xl mb-12 max-w-5xl mx-auto relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6"
+          >
             <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl" />
             
             <div className="space-y-2 max-w-lg text-center md:text-left z-10">
@@ -708,10 +785,16 @@ export default function Home() {
                 </>
               )}
             </form>
-          </div>
+          </motion.div>
 
           {/* Popular Topics tag pills */}
-          <div className="max-w-4xl mx-auto text-center space-y-4 pt-2">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="max-w-4xl mx-auto text-center space-y-4 pt-2"
+          >
             <h4 className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
               Popular Topics
             </h4>
@@ -726,10 +809,17 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </section>
 
-        <section id="testimonials" className="grid gap-5 pb-5 scroll-mt-24 lg:grid-cols-[1fr_1fr_1fr_1.25fr]">
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.15 }}
+          id="testimonials"
+          className="grid gap-5 pb-5 scroll-mt-24 lg:grid-cols-[1fr_1fr_1fr_1.25fr]"
+        >
           {testimonials.map((testimonial) => (
             <GlassCard key={testimonial.name} className="p-5">
               <div className="flex items-center gap-4">
@@ -763,13 +853,19 @@ export default function Home() {
               </p>
             </div>
           </GlassCard>
-        </section>
+        </motion.section>
 
         <section
           id="about"
           className="relative grid min-h-[430px] items-center gap-8 overflow-hidden border-b border-white/10 py-16 scroll-mt-24 lg:grid-cols-[0.85fr_1.1fr_0.72fr]"
         >
-          <div className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="relative z-10"
+          >
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-300">
               About Us
             </p>
@@ -802,36 +898,57 @@ export default function Home() {
                 tone="text-teal-300"
               />
             </div>
-          </div>
+          </motion.div>
 
-          <GlowingGlobe />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <GlowingGlobe />
+          </motion.div>
 
-          <GlassCard className="relative z-10 p-7">
-            <h3 className="mb-7 text-lg font-semibold text-white">Our Impact</h3>
-            <div className="space-y-7">
-              <ImpactRow
-                icon={Users}
-                value="10,000+"
-                label="Active Traders"
-                tone="text-pink-400"
-              />
-              <ImpactRow
-                icon={TrendingUp}
-                value="2M+"
-                label="Trades Analyzed"
-                tone="text-emerald-300"
-              />
-              <ImpactRow
-                icon={Globe2}
-                value="150+"
-                label="Countries"
-                tone="text-sky-300"
-              />
-            </div>
-          </GlassCard>
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+          >
+            <GlassCard className="relative z-10 p-7">
+              <h3 className="mb-7 text-lg font-semibold text-white">Our Impact</h3>
+              <div className="space-y-7">
+                <ImpactRow
+                  icon={Users}
+                  value="10,000+"
+                  label="Active Traders"
+                  tone="text-pink-400"
+                />
+                <ImpactRow
+                  icon={TrendingUp}
+                  value="2M+"
+                  label="Trades Analyzed"
+                  tone="text-emerald-300"
+                />
+                <ImpactRow
+                  icon={Globe2}
+                  value="150+"
+                  label="Countries"
+                  tone="text-sky-300"
+                />
+              </div>
+            </GlassCard>
+          </motion.div>
         </section>
 
-        <section id="contact" className="pb-7 scroll-mt-24">
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          id="contact"
+          className="pb-7 scroll-mt-24"
+        >
           <div className="rounded-3xl border border-cyan-300/20 bg-[radial-gradient(circle_at_left,rgba(20,184,166,0.18),transparent_28%),linear-gradient(90deg,rgba(8,13,28,0.95),rgba(30,20,70,0.85))] p-6 shadow-2xl shadow-black/25 md:flex md:items-center md:justify-between">
             <div className="flex items-center gap-5">
               <div className="hidden h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 md:flex">
@@ -865,7 +982,7 @@ export default function Home() {
               </p>
             </div>
           </div>
-        </section>
+        </motion.section>
       </section>
     </PublicLayout>
   );
