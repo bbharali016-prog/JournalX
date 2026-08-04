@@ -387,18 +387,25 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.8, delay: 0.15 }}
             className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto"
           >
             {features.map((feature) => (
-              <GlassCard key={feature.title} className="p-6">
-                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-teal-300/25 bg-teal-400/10 text-teal-300">
-                  <feature.icon className="h-7 w-7" />
-                </div>
-                <h3 className="text-lg font-semibold text-white">{feature.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{feature.description}</p>
-              </GlassCard>
+              <motion.div
+                key={feature.title}
+                whileHover={{ y: -8, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="h-full"
+              >
+                <GlassCard className="p-6 h-full">
+                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-teal-300/25 bg-teal-400/10 text-teal-300">
+                    <feature.icon className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">{feature.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-300">{feature.description}</p>
+                </GlassCard>
+              </motion.div>
             ))}
           </motion.div>
         </section>
@@ -456,7 +463,7 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.8, delay: 0.15 }}
             className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 items-stretch max-w-5xl mx-auto mb-16"
           >
@@ -466,68 +473,74 @@ export default function Home() {
               const PlanIcon = plan.icon;
 
               return (
-                <GlassCard
+                <motion.div
                   key={plan.name}
-                  className={`relative flex flex-col justify-between p-7 ${
-                    plan.highlight
-                      ? "border-cyan-300/40 bg-gradient-to-b from-violet-500/12 via-[#0e162f]/95 to-cyan-500/5 shadow-[0_0_50px_rgba(124,58,237,0.25)] ring-1 ring-violet-500/20"
-                      : ""
-                  }`}
+                  whileHover={{ y: -8, scale: 1.015 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="h-full flex"
                 >
-                  {isPopular && (
-                    <div className="absolute top-0 right-8 -translate-y-1/2">
-                      <span className="bg-gradient-to-r from-cyan-500 to-violet-600 text-white text-[9px] font-bold uppercase tracking-wider py-1 px-3 rounded-full shadow-md">
-                        Most Popular
-                      </span>
-                    </div>
-                  )}
-
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 ${plan.iconColor}`}>
-                        <PlanIcon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-white tracking-wide">{plan.name}</h3>
-                        <p className="text-[10px] text-slate-500 mt-0.5">{plan.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 flex items-baseline gap-1">
-                      <span className="text-4xl font-extrabold tracking-tight text-white">
-                        ${price}
-                      </span>
-                      <span className="text-xs text-slate-400">/month</span>
-                    </div>
-                    {billingPeriod === "yearly" && price > 0 ? (
-                      <p className="text-[10px] text-emerald-400 font-medium mt-1">
-                        Billed yearly (${price * 12}/year)
-                      </p>
-                    ) : (
-                      <p className="text-[10px] text-slate-500 mt-1">Billed monthly</p>
-                    )}
-
-                    <div className="mt-6 space-y-3">
-                      {plan.features.map((feature) => (
-                        <div key={feature} className="flex items-start gap-2 text-xs leading-5 text-slate-300">
-                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-400" />
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Link
-                    href="/login"
-                    className={`mt-6 inline-flex w-full items-center justify-center rounded-xl py-2.5 px-4 text-xs font-semibold transition ${
+                  <GlassCard
+                    className={`relative flex w-full flex-col justify-between p-7 ${
                       plan.highlight
-                        ? "bg-gradient-to-r from-cyan-500 to-violet-600 text-white shadow-lg shadow-indigo-500/25 hover:opacity-95"
-                        : "border border-white/15 bg-white/[0.04] hover:bg-white/8 text-slate-200"
+                        ? "border-cyan-300/40 bg-gradient-to-b from-violet-500/12 via-[#0e162f]/95 to-cyan-500/5 shadow-[0_0_50px_rgba(124,58,237,0.25)] ring-1 ring-violet-500/20"
+                        : ""
                     }`}
                   >
-                    Get Started
-                  </Link>
-                </GlassCard>
+                    {isPopular && (
+                      <div className="absolute top-0 right-8 -translate-y-1/2">
+                        <span className="bg-gradient-to-r from-cyan-500 to-violet-600 text-white text-[9px] font-bold uppercase tracking-wider py-1 px-3 rounded-full shadow-md">
+                          Most Popular
+                        </span>
+                      </div>
+                    )}
+
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 ${plan.iconColor}`}>
+                          <PlanIcon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-white tracking-wide">{plan.name}</h3>
+                          <p className="text-[10px] text-slate-500 mt-0.5">{plan.description}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 flex items-baseline gap-1">
+                        <span className="text-4xl font-extrabold tracking-tight text-white">
+                          ${price}
+                        </span>
+                        <span className="text-xs text-slate-400">/month</span>
+                      </div>
+                      {billingPeriod === "yearly" && price > 0 ? (
+                        <p className="text-[10px] text-emerald-400 font-medium mt-1">
+                          Billed yearly (${price * 12}/year)
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-slate-500 mt-1">Billed monthly</p>
+                      )}
+
+                      <div className="mt-6 space-y-3">
+                        {plan.features.map((feature) => (
+                          <div key={feature} className="flex items-start gap-2 text-xs leading-5 text-slate-300">
+                            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-400" />
+                            <span>{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Link
+                      href="/login"
+                      className={`mt-6 inline-flex w-full items-center justify-center rounded-xl py-2.5 px-4 text-xs font-semibold transition ${
+                        plan.highlight
+                          ? "bg-gradient-to-r from-cyan-500 to-violet-600 text-white shadow-lg shadow-indigo-500/25 hover:opacity-95"
+                          : "border border-white/15 bg-white/[0.04] hover:bg-white/8 text-slate-200"
+                      }`}
+                    >
+                      Get Started
+                    </Link>
+                  </GlassCard>
+                </motion.div>
               );
             })}
           </motion.div>
