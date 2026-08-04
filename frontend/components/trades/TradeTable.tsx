@@ -13,6 +13,15 @@ export default function TradeTable({
   onDelete,
   onEdit,
 }: Props) {
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const cleanBackendUrl = backendUrl.endsWith("/") ? backendUrl.slice(0, -1) : backendUrl;
+
+  const getImageUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    return `${cleanBackendUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+  };
+
   return (
     <div className="overflow-x-auto rounded-3xl border border-white/8 bg-white/[0.03] shadow-xl shadow-black/15">
       <table className="w-full text-sm">
@@ -80,22 +89,22 @@ export default function TradeTable({
                 </td>
                 
                 <td className="p-4 text-center">
-  {trade.image_url ? (
-    <a
-      href={`http://127.0.0.1:8000${trade.image_url}`}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <img
-        src={`http://127.0.0.1:8000${trade.image_url}`}
-        alt="Trade Screenshot"
-        className="mx-auto h-16 w-16 rounded-lg object-cover border border-white/10"
-      />
-    </a>
-  ) : (
-    <span className="text-slate-500">No Image</span>
-  )}
-</td>
+                  {trade.image_url ? (
+                    <a
+                      href={getImageUrl(trade.image_url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        src={getImageUrl(trade.image_url)}
+                        alt="Trade Screenshot"
+                        className="mx-auto h-16 w-16 rounded-lg object-cover border border-white/10"
+                      />
+                    </a>
+                  ) : (
+                    <span className="text-slate-500">No Image</span>
+                  )}
+                </td>
 
                 <td className="p-4 text-center space-x-2">
                   <button
