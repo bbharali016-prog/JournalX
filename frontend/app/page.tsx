@@ -34,6 +34,7 @@ import {
   Sparkles,
   Crown,
   Laptop,
+  Eye,
   Server,
   Code,
   Database,
@@ -868,89 +869,258 @@ export default function Home() {
           </GlassCard>
         </motion.section>
 
-        <section
-          id="about"
-          className="relative grid min-h-[430px] items-center gap-8 overflow-hidden border-b border-white/10 py-16 scroll-mt-24 lg:grid-cols-[0.85fr_1.1fr_0.72fr]"
-        >
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="relative z-10"
-          >
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-300">
-              About Us
-            </p>
-            <h2 className="mt-5 max-w-xl text-4xl font-semibold leading-tight tracking-tight text-white md:text-5xl">
-              Our mission is to help traders succeed
-            </h2>
-            <p className="mt-6 max-w-xl text-base leading-8 text-slate-300">
-              JournalFX was built by traders, for traders. We combine powerful
-              technology with real trading experience to create the ultimate
-              journal and analytics platform.
-            </p>
+        <section id="about" className="relative border-b border-white/10 py-16 scroll-mt-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Content column */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.7 }}
+              className="lg:col-span-6 relative z-10"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-violet-400">
+                About Us
+              </p>
+              <h2 className="mt-5 text-4xl font-bold tracking-tight text-white md:text-5xl leading-tight">
+                We're on a mission to <br />
+                <span className="bg-gradient-to-r from-teal-300 via-cyan-300 to-violet-400 bg-clip-text text-transparent">
+                  help traders succeed.
+                </span>
+              </h2>
+              <p className="mt-6 text-sm sm:text-base leading-8 text-slate-300">
+                JournalFX was built by traders, for traders. We combine powerful
+                technology with real trading experience to create the ultimate
+                journal and analytics platform that helps you analyze, improve,
+                and grow consistently.
+              </p>
 
-            <div className="mt-8 grid gap-5 sm:grid-cols-3">
-              <AboutPoint
-                icon={Power}
-                title="Built by Traders"
-                text="We understand what traders really need."
-                tone="text-violet-300"
-              />
-              <AboutPoint
-                icon={ShieldCheck}
-                title="Trusted Worldwide"
-                text="Join 10,000+ traders from 150+ countries."
-                tone="text-emerald-300"
-              />
-              <AboutPoint
-                icon={RefreshCw}
-                title="Constantly Improving"
-                text="We're always building new features for you."
-                tone="text-teal-300"
-              />
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <GlowingGlobe />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <GlassCard className="relative z-10 p-7">
-              <h3 className="mb-7 text-lg font-semibold text-white">Our Impact</h3>
-              <div className="space-y-7">
-                <ImpactRow
-                  icon={Users}
-                  value="10,000+"
-                  label="Active Traders"
-                  tone="text-pink-400"
+              <div className="mt-8 space-y-6">
+                <AboutPointNew
+                  icon={Power}
+                  iconColor="text-violet-400 bg-violet-500/10 border-violet-500/20"
+                  title="Built by Traders"
+                  text="We understand what traders really need because we live it every day."
                 />
-                <ImpactRow
+                <AboutPointNew
+                  icon={ShieldCheck}
+                  iconColor="text-teal-400 bg-teal-500/10 border-teal-500/20"
+                  title="Trusted Worldwide"
+                  text="Join 10,000+ traders from 150+ countries who trust JournalFX."
+                />
+                <AboutPointNew
                   icon={TrendingUp}
-                  value="2M+"
-                  label="Trades Analyzed"
-                  tone="text-emerald-300"
-                />
-                <ImpactRow
-                  icon={Globe2}
-                  value="150+"
-                  label="Countries"
-                  tone="text-sky-300"
+                  iconColor="text-blue-400 bg-blue-500/10 border-blue-500/20"
+                  title="Constantly Improving"
+                  text="We're always building new features to help you stay ahead."
                 />
               </div>
-            </GlassCard>
+            </motion.div>
+
+            {/* Right Globe + Floating cards column */}
+            <div className="lg:col-span-6 relative flex items-center justify-center min-h-[460px]">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="w-full max-w-[440px]"
+              >
+                <GlowingGlobe />
+              </motion.div>
+
+              {/* Floating Cards (visible on md and up) */}
+              <motion.div
+                initial={{ opacity: 0, x: -20, y: -20 }}
+                whileInView={{ opacity: 1, x: 0, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="absolute hidden md:block top-[8%] left-[2%] z-20 w-[160px] rounded-2xl border border-white/8 bg-white/[0.04] p-4 backdrop-blur-xl shadow-xl"
+              >
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Trades Analyzed</p>
+                <p className="mt-1 text-2xl font-bold text-white">2M+</p>
+                <div className="mt-3 flex items-end gap-1 h-8">
+                  {[20, 40, 60, 30, 80, 50, 90].map((h, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-sm bg-violet-500/70"
+                      style={{ height: `${h}%` }}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 20, y: -20 }}
+                whileInView={{ opacity: 1, x: 0, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="absolute hidden md:block top-[8%] right-[2%] z-20 w-[160px] rounded-2xl border border-white/8 bg-white/[0.04] p-4 backdrop-blur-xl shadow-xl"
+              >
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Active Traders</p>
+                <p className="mt-1 text-2xl font-bold text-white">10,000+</p>
+                <div className="mt-3 flex -space-x-2 overflow-hidden">
+                  {[
+                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=32&h=32&q=80",
+                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=32&h=32&q=80",
+                    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=32&h=32&q=80",
+                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=32&h=32&q=80",
+                    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=32&h=32&q=80"
+                  ].map((url, idx) => (
+                    <img
+                      key={idx}
+                      className="inline-block h-6 w-6 rounded-full ring-2 ring-[#02060d] object-cover"
+                      src={url}
+                      alt="User avatar"
+                    />
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -20, y: 20 }}
+                whileInView={{ opacity: 1, x: 0, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="absolute hidden md:block bottom-[8%] left-[2%] z-20 w-[160px] rounded-2xl border border-white/8 bg-white/[0.04] p-4 backdrop-blur-xl shadow-xl"
+              >
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Countries</p>
+                <p className="mt-1 text-2xl font-bold text-white">150+</p>
+                <div className="mt-2.5 flex items-center justify-center h-8 text-blue-400">
+                  <svg className="w-12 h-8" viewBox="0 0 100 50" fill="none" stroke="currentColor" strokeWidth="1">
+                    <path d="M10 20 Q 20 10 30 25 T 50 15 T 70 30 T 90 10 M20 35 Q 35 25 50 40 T 80 30" strokeDasharray="2,2" />
+                    <circle cx="30" cy="25" r="2" fill="currentColor" />
+                    <circle cx="50" cy="15" r="2" fill="currentColor" />
+                    <circle cx="70" cy="30" r="2" fill="currentColor" />
+                  </svg>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 20, y: 20 }}
+                whileInView={{ opacity: 1, x: 0, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="absolute hidden md:block bottom-[8%] right-[2%] z-20 w-[160px] rounded-2xl border border-white/8 bg-white/[0.04] p-4 backdrop-blur-xl shadow-xl"
+              >
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Consistency</p>
+                <p className="mt-1 text-2xl font-bold text-white">99%</p>
+                <div className="mt-3 h-8">
+                  <svg className="w-full h-full" viewBox="0 0 100 30" fill="none">
+                    <path
+                      d="M0 25 Q 15 20 30 10 T 60 18 T 90 2 T 100 5"
+                      stroke="#10b981"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Under-Globe Grid cards (visible only on mobile) */}
+          <div className="grid grid-cols-2 gap-4 mt-8 md:hidden">
+            {[
+              { label: "Trades Analyzed", value: "2M+" },
+              { label: "Active Traders", value: "10,000+" },
+              { label: "Countries", value: "150+" },
+              { label: "Consistency", value: "99%" }
+            ].map((card, idx) => (
+              <div key={idx} className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">{card.label}</p>
+                <p className="mt-1 text-xl font-bold text-white">{card.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Middle Section: Story & Values Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-16">
+            {/* Story Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="rounded-3xl border border-white/8 bg-white/[0.02] p-6 sm:p-8 flex flex-col justify-between"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                <div className="md:col-span-7 space-y-4">
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+                    Our Story
+                  </h3>
+                  <p className="text-xs sm:text-sm leading-relaxed text-slate-300">
+                    JournalFX started with a simple idea — trading is more than just placing trades. It's about learning, adapting, and becoming 1% better every day.
+                  </p>
+                  <p className="text-xs sm:text-sm leading-relaxed text-slate-300">
+                    We built the tools we wished we had in our own trading journey, and now we're proud to share them with traders around the world.
+                  </p>
+                </div>
+                <div className="md:col-span-5">
+                  <div className="rounded-2xl border border-white/10 overflow-hidden bg-black/40 shadow-inner">
+                    <img
+                      src="/brand/trading_setup_mockup.jpg"
+                      alt="JournalFX Workstation Setup"
+                      className="w-full h-auto object-cover max-h-[160px] md:max-h-[200px]"
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Values Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.15 }}
+              className="rounded-3xl border border-white/8 bg-white/[0.02] p-6 sm:p-8"
+            >
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent">
+                Our Values
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+                <ValueBlock
+                  icon={Eye}
+                  title="Transparency"
+                  text="We believe in clear data, honest analytics, and no hidden agendas."
+                  tone="text-blue-400 bg-blue-500/10 border-blue-500/20"
+                />
+                <ValueBlock
+                  icon={Users}
+                  title="Empowerment"
+                  text="We empower traders with the insights and tools to take control."
+                  tone="text-violet-400 bg-violet-500/10 border-violet-500/20"
+                />
+                <ValueBlock
+                  icon={Cpu}
+                  title="Innovation"
+                  text="We push boundaries to bring you features that actually make a difference."
+                  tone="text-blue-400 bg-blue-500/10 border-blue-500/20"
+                />
+                <ValueBlock
+                  icon={Star}
+                  title="Community"
+                  text="We grow together as a community of serious and passionate traders."
+                  tone="text-violet-400 bg-violet-500/10 border-violet-500/20"
+                />
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Bottom Full-Width Stats Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="rounded-3xl border border-white/8 bg-white/[0.02] p-6 sm:p-8 mt-12 grid grid-cols-2 md:grid-cols-5 gap-y-8 gap-x-4 md:gap-0 divide-y-0 divide-x-0 md:divide-x divide-white/8"
+          >
+            <BottomStatItem icon={Users} value="10,000+" label="Active Traders" />
+            <BottomStatItem icon={TrendingUp} value="2M+" label="Trades Analyzed" />
+            <BottomStatItem icon={Globe2} value="150+" label="Countries" />
+            <BottomStatItem icon={ShieldCheck} value="99%" label="Uptime" />
+            <BottomStatItem icon={Star} value="4.9 / 5" label="Average Rating" />
           </motion.div>
         </section>
 
@@ -1265,6 +1435,76 @@ function GlassPanel({ children, className = "" }: { children: React.ReactNode; c
   return (
     <div className={`rounded-xl border border-white/10 bg-white/[0.04] ${className}`}>
       {children}
+    </div>
+  );
+}
+
+function AboutPointNew({
+  icon: Icon,
+  iconColor,
+  title,
+  text,
+}: {
+  icon: React.ElementType;
+  iconColor: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="flex items-start gap-4">
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${iconColor}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <h4 className="text-sm font-semibold text-white">{title}</h4>
+        <p className="mt-1.5 text-xs sm:text-sm text-slate-400 leading-relaxed">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+function ValueBlock({
+  icon: Icon,
+  title,
+  text,
+  tone,
+}: {
+  icon: React.ElementType;
+  title: string;
+  text: string;
+  tone: string;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className={`flex h-9 w-9 items-center justify-center rounded-lg border ${tone} w-fit`}>
+        <Icon className="h-4.5 w-4.5" />
+      </div>
+      <div>
+        <h4 className="text-sm font-semibold text-white">{title}</h4>
+        <p className="mt-1.5 text-xs text-slate-400 leading-relaxed">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+function BottomStatItem({
+  icon: Icon,
+  value,
+  label,
+}: {
+  icon: React.ElementType;
+  value: string;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-4 px-2 py-3 md:py-0 md:px-5 justify-center md:justify-start first:pt-0 md:first:pt-0">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/5 border border-white/8 text-violet-400">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-xl sm:text-2xl font-bold text-white">{value}</p>
+        <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+      </div>
     </div>
   );
 }
