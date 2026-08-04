@@ -121,22 +121,34 @@ export default function AnalyticsPage() {
       };
     }
 
-    const sorted = [...trades].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    let eq = 0;
-    let bal = 0;
-    const eqPoints = [0];
-    const balPoints = [0];
-
-    sorted.forEach((t) => {
-      eq += t.profit;
-      bal += t.profit * 0.96; // simulated balance lag
-      eqPoints.push(eq);
-      balPoints.push(bal);
+    // Group net profit by ISO date YYYY-MM-DD
+    const dailyProfit: { [date: string]: number } = {};
+    trades.forEach((t) => {
+      const isoDate = new Date(t.created_at).toISOString().split("T")[0];
+      dailyProfit[isoDate] = (dailyProfit[isoDate] || 0) + t.profit;
     });
 
-    const all = [...eqPoints, ...balPoints];
-    const minVal = Math.min(...all);
-    const maxVal = Math.max(...all);
+    // Convert to sorted array of days
+    const sortedDays = Object.entries(dailyProfit)
+      .map(([date, profit]) => ({ date, profit }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Calculate cumulative equity and balance
+    let cumulativeEquity = 0;
+    let cumulativeBalance = 0;
+    const eqPoints: number[] = [0];
+    const balPoints: number[] = [0];
+
+    sortedDays.forEach((day) => {
+      cumulativeEquity += day.profit;
+      cumulativeBalance += day.profit * 0.96; // balance lag simulation
+      eqPoints.push(cumulativeEquity);
+      balPoints.push(cumulativeBalance);
+    });
+
+    const allPoints = [...eqPoints, ...balPoints];
+    const minVal = Math.min(...allPoints);
+    const maxVal = Math.max(...allPoints);
     const range = maxVal - minVal || 1;
 
     const mapCoords = (arr: number[]) => {
@@ -155,11 +167,38 @@ export default function AnalyticsPage() {
     const equityAreaPath = `${equityPath} L 400 160 L 0 160 Z`;
     const balanceAreaPath = `${balancePath} L 400 160 L 0 160 Z`;
 
-    const labels = sorted.slice(-5).map((t) =>
-      new Date(t.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })
-    );
+    // Map labels to display dates (e.g. "Jul 19")
+    const labels = sortedDays.map((day) => {
+      const d = new Date(day.date);
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    });
 
-    return { equityPath, balancePath, equityAreaPath, balanceAreaPath, labels };
+    // Make sure we have 5 labels evenly distributed
+    const finalLabels: string[] = [];
+    if (labels.length > 0) {
+      finalLabels.push(labels[0]);
+      if (labels.length > 2) {
+        finalLabels.push(labels[Math.floor(labels.length * 0.25)]);
+        finalLabels.push(labels[Math.floor(labels.length * 0.5)]);
+        finalLabels.push(labels[Math.floor(labels.length * 0.75)]);
+      }
+      if (labels.length > 1) {
+        finalLabels.push(labels[labels.length - 1]);
+      }
+    }
+    
+    // Fallback if we have fewer labels
+    while (finalLabels.length < 5) {
+      finalLabels.push("");
+    }
+
+    return {
+      equityPath,
+      balancePath,
+      equityAreaPath,
+      balanceAreaPath,
+      labels: finalLabels,
+    };
   };
 
   const { equityPath, balancePath, equityAreaPath, balanceAreaPath, labels } = getEquityPoints();
@@ -168,18 +207,31 @@ export default function AnalyticsPage() {
   const getDailyPnL = () => {
     const daily: { [date: string]: number } = {};
     trades.forEach((t) => {
-      const dateStr = new Date(t.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-      daily[dateStr] = (daily[dateStr] || 0) + t.profit;
+      const isoDate = new Date(t.created_at).toISOString().split("T")[0]; // YYYY-MM-DD
+      daily[isoDate] = (daily[isoDate] || 0) + t.profit;
     });
 
     const items = Object.entries(daily).map(([date, val]) => ({
-      date,
+      date, // YYYY-MM-DD
       val,
       p: val >= 0,
     }));
 
-    items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return items.slice(-15);
+    // Sort by ISO string chronologically (oldest to newest)
+    items.sort((a, b) => a.date.localeCompare(b.date));
+
+    // Slice last 15 days
+    const recentItems = items.slice(-15);
+
+    // Format for display
+    return recentItems.map((item) => {
+      const d = new Date(item.date);
+      const displayDate = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      return {
+        ...item,
+        displayDate,
+      };
+    });
   };
 
   const dailyPnLData = getDailyPnL();
