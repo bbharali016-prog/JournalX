@@ -25,13 +25,14 @@ import { useActiveAccount } from "@/components/auth/AccountContext";
 import { Trade } from "@/types/trade";
 
 export default function AnalyticsPage() {
-  const { selectedAccountId } = useActiveAccount();
+  const { selectedAccountId, accounts } = useActiveAccount();
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<any>(null);
   const [drawdownSeries, setDrawdownSeries] = useState<DrawdownPoint[]>([]);
   const [symbolPerformance, setSymbolPerformance] = useState<SymbolPerformance[]>([]);
   const [sessionPerformance, setSessionPerformance] = useState<SessionPerformance[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -62,6 +63,10 @@ export default function AnalyticsPage() {
 
   // Derived variables
   const netProfit = overview?.net_profit ?? 0;
+  const activeAccount = accounts?.find((a) => a.id === selectedAccountId);
+  const startingBalance = selectedAccountId === null
+    ? (accounts?.reduce((sum, a) => sum + (a.account_size ?? 0), 0) || 10000)
+    : (activeAccount?.account_size ?? 10000);
   const totalTradesCount = overview?.total_trades ?? 0;
   const winRate = overview?.win_rate ?? 0;
   const profitFactor = overview?.profit_factor ?? 0;
@@ -118,6 +123,12 @@ export default function AnalyticsPage() {
         equityAreaPath: "M 0 120 L 400 120 L 400 160 L 0 160 Z",
         balanceAreaPath: "M 0 120 L 400 120 L 400 160 L 0 160 Z",
         labels: ["No Trades"],
+        eqCoords: [],
+        balCoords: [],
+        sortedDays: [],
+        eqPoints: [0],
+        balPoints: [0],
+        maxCumulativeEquity: 0,
       };
     }
 
@@ -198,10 +209,28 @@ export default function AnalyticsPage() {
       equityAreaPath,
       balanceAreaPath,
       labels: finalLabels,
+      eqCoords,
+      balCoords,
+      sortedDays,
+      eqPoints,
+      balPoints,
+      maxCumulativeEquity: Math.max(...eqPoints, 0),
     };
   };
 
-  const { equityPath, balancePath, equityAreaPath, balanceAreaPath, labels } = getEquityPoints();
+  const {
+    equityPath,
+    balancePath,
+    equityAreaPath,
+    balanceAreaPath,
+    labels,
+    eqCoords,
+    balCoords,
+    sortedDays,
+    eqPoints,
+    balPoints,
+    maxCumulativeEquity,
+  } = getEquityPoints();
 
   // Dynamic Daily P&L bars
   const getDailyPnL = () => {
@@ -447,23 +476,46 @@ export default function AnalyticsPage() {
         {/* Grid 2: Core Performance Charts */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Equity Curve Chart */}
-          <GlassPanel className="p-5 flex flex-col justify-between min-h-[340px]">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-sm font-semibold text-white">Equity Curve</h3>
-                <div className="flex items-center gap-3 mt-1.5">
-                  <div className="flex items-center gap-1.5 text-xs text-violet-400">
-                    <span className="h-2 w-2 rounded-full bg-violet-500" />
-                    Equity
+          <GlassPanel className="p-5 flex flex-col justify-between min-h-[340px] relative">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Equity Curve</h3>
+                  <div className="flex items-center gap-3 mt-1">
+                    <div className="flex items-center gap-1.5 text-xs text-violet-400">
+                      <span className="h-2 w-2 rounded-full bg-violet-500" />
+                      Equity
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-cyan-400">
+                      <span className="h-2 w-2 rounded-full bg-cyan-400" />
+                      Balance
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-cyan-400">
-                    <span className="h-2 w-2 rounded-full bg-cyan-400" />
-                    Balance
-                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Starting Size</span>
+                  <span className="text-xs sm:text-sm font-bold text-slate-200">${startingBalance.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Quick Balance Stats Row */}
+              <div className="grid grid-cols-2 gap-4 border-y border-white/5 py-2.5 my-2.5">
+                <div>
+                  <span className="text-[9px] text-slate-500 font-semibold block uppercase tracking-wider">Current Balance</span>
+                  <span className="text-xs sm:text-sm font-bold text-emerald-400">
+                    ${(startingBalance + netProfit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-slate-500 font-semibold block uppercase tracking-wider">Highest Peak Reached</span>
+                  <span className="text-xs sm:text-sm font-bold text-cyan-400">
+                    ${(startingBalance + maxCumulativeEquity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
               </div>
             </div>
-            {/* SVG Line Chart */}
+
+            {/* SVG Line Chart Wrapper */}
             <div className="relative flex-1 h-44 mt-2">
               <svg className="w-full h-full" viewBox="0 0 400 160" preserveAspectRatio="none">
                 <defs>
@@ -488,7 +540,107 @@ export default function AnalyticsPage() {
                 {/* Equity Area & Line */}
                 <path d={equityAreaPath} fill="url(#equityGrad)" />
                 <path d={equityPath} fill="none" stroke="#8b5cf6" strokeWidth="2.5" />
+
+                {/* Hover Guide Line and Markers */}
+                {hoveredPointIdx !== null && eqCoords[hoveredPointIdx] && (
+                  <>
+                    <line
+                      x1={eqCoords[hoveredPointIdx].x}
+                      y1={0}
+                      x2={eqCoords[hoveredPointIdx].x}
+                      y2={160}
+                      stroke="rgba(139,92,246,0.4)"
+                      strokeWidth="1.5"
+                      strokeDasharray="3,3"
+                    />
+                    <circle
+                      cx={eqCoords[hoveredPointIdx].x}
+                      cy={eqCoords[hoveredPointIdx].y}
+                      r="4.5"
+                      fill="#8b5cf6"
+                      stroke="#ffffff"
+                      strokeWidth="1.5"
+                    />
+                    <circle
+                      cx={balCoords[hoveredPointIdx].x}
+                      cy={balCoords[hoveredPointIdx].y}
+                      r="4.5"
+                      fill="#2dd4bf"
+                      stroke="#ffffff"
+                      strokeWidth="1.5"
+                    />
+                  </>
+                )}
+
+                {/* Invisible Hover Rectangles Overlays */}
+                {eqCoords.length > 1 && eqCoords.map((p, idx) => {
+                  const prevX = idx === 0 ? p.x : eqCoords[idx - 1].x;
+                  const nextX = idx === eqCoords.length - 1 ? p.x : eqCoords[idx + 1].x;
+                  const startX = idx === 0 ? p.x : p.x - (p.x - prevX) / 2;
+                  const endX = idx === eqCoords.length - 1 ? p.x : p.x + (nextX - p.x) / 2;
+                  const width = endX - startX || 1;
+
+                  return (
+                    <rect
+                      key={idx}
+                      x={startX}
+                      y={0}
+                      width={width}
+                      height={160}
+                      fill="transparent"
+                      className="cursor-pointer"
+                      onMouseEnter={() => setHoveredPointIdx(idx)}
+                      onMouseMove={() => setHoveredPointIdx(idx)}
+                      onMouseLeave={() => setHoveredPointIdx(null)}
+                    />
+                  );
+                })}
               </svg>
+
+              {/* HTML Floating Tooltip Box */}
+              {hoveredPointIdx !== null && eqCoords[hoveredPointIdx] && (
+                <div
+                  className="absolute z-30 rounded-xl border border-white/10 bg-black/95 p-3 shadow-2xl backdrop-blur-md pointer-events-none transition-all duration-100 flex flex-col gap-1 w-44"
+                  style={{
+                    left: `${(eqCoords[hoveredPointIdx].x / 400) * 100}%`,
+                    top: `${Math.min(eqCoords[hoveredPointIdx].y, balCoords[hoveredPointIdx].y) - 64}px`,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                >
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                    {hoveredPointIdx === 0
+                      ? "Initial State"
+                      : new Date(sortedDays[hoveredPointIdx - 1].date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                  </p>
+                  <div className="flex items-center justify-between mt-1 text-[11px]">
+                    <span className="text-slate-400 flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+                      Equity:
+                    </span>
+                    <span className="font-bold text-white">
+                      ${(startingBalance + (hoveredPointIdx === 0 ? 0 : eqPoints[hoveredPointIdx])).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400 flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                      Balance:
+                    </span>
+                    <span className="font-bold text-white">
+                      ${(startingBalance + (hoveredPointIdx === 0 ? 0 : balPoints[hoveredPointIdx])).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  {hoveredPointIdx > 0 && (
+                    <div className="flex items-center justify-between text-[11px] border-t border-white/5 pt-1 mt-1">
+                      <span className="text-slate-400">Day P&L:</span>
+                      <span className={`font-bold ${sortedDays[hoveredPointIdx - 1].profit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                        {sortedDays[hoveredPointIdx - 1].profit >= 0 ? "+" : ""}${sortedDays[hoveredPointIdx - 1].profit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Date axis labels */}
               <div className="flex justify-between text-[9px] text-slate-500 mt-2 font-medium">
                 {labels.map((lbl, idx) => (
