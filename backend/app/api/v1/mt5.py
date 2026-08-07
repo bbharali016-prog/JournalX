@@ -177,8 +177,38 @@ def sync_metaapi_trades(
             detail="MetaApi connection credentials not found. Please connect first."
         )
 
-    # Call MetaStats API
-    url = f"https://metastats-api-v1.metaapi.cloud/users/current/accounts/{current_user.metaapi_account_id}/historical-trades?updateHistory=true"
+    # 1. Fetch account region from global provisioning API
+    account_url = f"https://web-api.metaapi.cloud/users/current/accounts/{current_user.metaapi_account_id}"
+    acc_request = Request(
+        account_url,
+        headers={
+            "auth-token": current_user.metaapi_token,
+            "Content-Type": "application/json"
+        },
+        method="GET"
+    )
+
+    region = "new-york"
+    try:
+        import ssl
+        context = ssl._create_unverified_context()
+        with urlopen(acc_request, timeout=15, context=context) as response:
+            acc_data = json.loads(response.read().decode("utf-8"))
+            region = acc_data.get("region", "new-york")
+    except Exception as e:
+        print(f"Failed to fetch account region, falling back to new-york: {e}")
+
+    # 2. Build time range parameters
+    from urllib.parse import quote
+    from datetime import datetime
+    start_time_str = "2020-01-01 00:00:00.000"
+    end_time_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.000")
+    
+    start_encoded = quote(start_time_str)
+    end_encoded = quote(end_time_str)
+
+    # 3. Call MetaStats API with correct regional domain and path parameters
+    url = f"https://metastats-api-v1.{region}.agiliumtrade.ai/users/current/accounts/{current_user.metaapi_account_id}/historical-trades/{start_encoded}/{end_encoded}?updateHistory=true"
     request = Request(
         url,
         headers={
