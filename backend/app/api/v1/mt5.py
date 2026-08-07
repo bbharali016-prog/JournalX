@@ -245,6 +245,8 @@ def sync_metaapi_trades(
             continue
 
         symbol = item.get("symbol")
+        if not symbol:
+            continue
         volume = item.get("volume", 0.0)
         profit = item.get("profit", 0.0)
         open_price = item.get("openPrice", 0.0)
