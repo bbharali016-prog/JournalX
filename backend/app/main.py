@@ -64,9 +64,10 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://jouranfx.vercel.app",        # production frontend
-        "https://journalx.vercel.app",         # alternate
-        "https://*.vercel.app",                # all Vercel preview deployments
+        "https://jouranfx.vercel.app",
+        "https://journalforex.vercel.app",    # New production frontend
+        "https://journalx.vercel.app",
+        "https://*.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
