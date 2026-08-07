@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChevronDown, User, LogOut, CreditCard, Sparkles, X } from "lucide-react";
 import { useCurrentUser } from "@/components/auth/UserContext";
+import { getBackendUrl } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -39,7 +40,7 @@ export default function UserMenu() {
     router.push("/login");
   };
 
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const backendUrl = getBackendUrl();
   const avatarSrc = user?.profile_image_url
     ? (user.profile_image_url.startsWith("http")
         ? user.profile_image_url

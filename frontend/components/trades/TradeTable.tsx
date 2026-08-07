@@ -1,6 +1,7 @@
 "use client";
 
 import { Trade } from "@/types/trade";
+import { getBackendUrl } from "@/lib/utils";
 
 interface Props {
   trades: Trade[];
@@ -13,7 +14,7 @@ export default function TradeTable({
   onDelete,
   onEdit,
 }: Props) {
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const backendUrl = getBackendUrl();
   const cleanBackendUrl = backendUrl.endsWith("/") ? backendUrl.slice(0, -1) : backendUrl;
 
   const getImageUrl = (url: string) => {

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { X, Camera, Loader2 } from "lucide-react";
 import { useCurrentUser } from "@/components/auth/UserContext";
 import { updateProfile, uploadAvatar } from "@/services/api/users";
+import { getBackendUrl } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface EditProfileModalProps {
@@ -99,7 +100,7 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
       .map((part) => part[0]?.toUpperCase())
       .join("") ?? "JX";
 
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const backendUrl = getBackendUrl();
   const avatarSrc = imageUrl
     ? (imageUrl.startsWith("http")
         ? imageUrl
