@@ -178,7 +178,7 @@ def sync_metaapi_trades(
         )
 
     # 1. Fetch account region from global provisioning API
-    account_url = f"https://web-api.metaapi.cloud/users/current/accounts/{current_user.metaapi_account_id}"
+    account_url = f"https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/{current_user.metaapi_account_id}"
     acc_request = Request(
         account_url,
         headers={
