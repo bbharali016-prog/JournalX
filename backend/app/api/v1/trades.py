@@ -9,6 +9,7 @@ from fastapi import (
 import os
 import shutil
 import uuid
+import base64
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -91,23 +92,18 @@ def edit_trade(
 async def upload_trade_image(
     image: UploadFile = File(...),
 ):
-    os.makedirs("uploads", exist_ok=True)
-
-    extension = image.filename.split(".")[-1]
-
-    filename = f"{uuid.uuid4()}.{extension}"
-
-    filepath = os.path.join(
-        "uploads",
-        filename,
-    )
-
-    with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(
-            image.file,
-            buffer,
-        )
+    # Read the file contents
+    contents = await image.read()
+    
+    # Base64 encode the image bytes
+    encoded = base64.b64encode(contents).decode("utf-8")
+    
+    # Get mime type (default to image/png)
+    mime_type = image.content_type or "image/png"
+    
+    # Build inline base64 data URL
+    data_url = f"data:{mime_type};base64,{encoded}"
 
     return {
-        "image_url": f"/uploads/{filename}"
+        "image_url": data_url
     }

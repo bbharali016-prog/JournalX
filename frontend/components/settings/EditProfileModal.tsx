@@ -102,7 +102,7 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
 
   const backendUrl = getBackendUrl();
   const avatarSrc = imageUrl
-    ? (imageUrl.startsWith("http")
+    ? (imageUrl.startsWith("http") || imageUrl.startsWith("data:")
         ? imageUrl
         : (backendUrl.endsWith("/") ? backendUrl.slice(0, -1) : backendUrl) + imageUrl)
     : undefined;

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 import os
 import uuid
+import base64
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
@@ -76,14 +77,16 @@ async def upload_avatar(
     if ext not in [".jpg", ".jpeg", ".png", ".gif"]:
         raise HTTPException(status_code=400, detail="Invalid image type")
 
-    avatar_dir = "uploads/avatars"
-    os.makedirs(avatar_dir, exist_ok=True)
+    # Read the file contents
+    contents = await file.read()
+    
+    # Base64 encode the image bytes
+    encoded = base64.b64encode(contents).decode("utf-8")
+    
+    # Get mime type (default to image/png)
+    mime_type = file.content_type or "image/png"
+    
+    # Build inline base64 data URL
+    data_url = f"data:{mime_type};base64,{encoded}"
 
-    filename = f"{uuid.uuid4()}{ext}"
-    filepath = os.path.join(avatar_dir, filename)
-
-    with open(filepath, "wb") as f:
-        f.write(await file.read())
-
-    avatar_url = f"/uploads/avatars/{filename}"
-    return {"url": avatar_url}
+    return {"url": data_url}

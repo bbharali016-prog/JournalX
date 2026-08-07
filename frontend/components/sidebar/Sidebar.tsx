@@ -65,7 +65,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
 
   const backendUrl = getBackendUrl();
   const avatarSrc = user?.profile_image_url
-    ? (user.profile_image_url.startsWith("http")
+    ? (user.profile_image_url.startsWith("http") || user.profile_image_url.startsWith("data:")
         ? user.profile_image_url
         : (backendUrl.endsWith("/") ? backendUrl.slice(0, -1) : backendUrl) + user.profile_image_url)
     : undefined;
