@@ -66,6 +66,8 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://jouranfx.vercel.app",
         "https://journalforex.vercel.app",    # New production frontend
+        "https://journalforex.online",        # Root custom domain
+        "https://www.journalforex.online",    # WWW custom domain
         "https://journalx.vercel.app",
         "https://*.vercel.app",
     ],
