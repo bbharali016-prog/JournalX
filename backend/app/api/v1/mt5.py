@@ -189,7 +189,9 @@ def sync_metaapi_trades(
     )
 
     try:
-        with urlopen(request, timeout=30) as response:
+        import ssl
+        context = ssl._create_unverified_context()
+        with urlopen(request, timeout=30, context=context) as response:
             res_body = response.read().decode("utf-8")
             data = json.loads(res_body)
     except HTTPError as exc:
