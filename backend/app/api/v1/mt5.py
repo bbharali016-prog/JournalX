@@ -11,6 +11,7 @@ from urllib.error import HTTPError, URLError
 from app.db.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
+from app.models.account import Account
 from app.models.trade import Trade
 from app.schemas.mt5 import MT5TradeSyncRequest
 
@@ -236,6 +237,18 @@ def sync_metaapi_trades(
             detail=f"Failed to connect to MetaStats: {exc.reason}"
         )
 
+    # Resolve or link MT5 Account for the user
+    target_account = (
+        db.query(Account)
+        .filter(
+            Account.user_id == current_user.id,
+            (Account.login_id == "315063863") | (Account.name.ilike("%goat%")) | (Account.platform == "MT5")
+        )
+        .first()
+    )
+    if not target_account:
+        target_account = db.query(Account).filter(Account.user_id == current_user.id).first()
+
     trades_list = data.get("trades", [])
     synced_count = 0
 
@@ -244,17 +257,52 @@ def sync_metaapi_trades(
         if not ticket:
             continue
 
-        symbol = item.get("symbol")
-        if not symbol:
+        raw_symbol = item.get("symbol")
+        if not raw_symbol:
             continue
-        volume = item.get("volume", 0.0)
-        profit = item.get("profit", 0.0)
-        open_price = item.get("openPrice", 0.0)
-        close_price = item.get("closePrice", 0.0)
+
+        # Format symbol e.g. GBPUSD.x -> GBP/USD
+        clean_sym = raw_symbol.replace(".x", "").replace(".pro", "").replace(".raw", "").upper()
+        if len(clean_sym) == 6 and "/" not in clean_sym:
+            clean_sym = f"{clean_sym[:3]}/{clean_sym[3:]}"
+
+        volume = float(item.get("volume", 0.0))
+        profit = float(item.get("profit", 0.0))
+        open_price = float(item.get("openPrice", 0.0))
+        close_price = float(item.get("closePrice", 0.0))
         close_time_str = item.get("closeTime") or item.get("openTime")
         
         trade_type = item.get("type", "POSITION_TYPE_BUY")
         side = "BUY" if "BUY" in trade_type else "SELL"
+
+        # Rich notes extraction
+        comment = item.get("comment") or ""
+        pips = item.get("pips")
+        duration = item.get("durationInMinutes")
+        
+        notes_parts = []
+        if comment:
+            if "[tp" in comment.lower():
+                notes_parts.append(f"TP Hit {comment}")
+            elif "[sl" in comment.lower():
+                notes_parts.append(f"SL Hit {comment}")
+            else:
+                notes_parts.append(comment)
+        elif profit > 0:
+            notes_parts.append("Take Profit")
+        elif profit < 0:
+            notes_parts.append("Stop Loss")
+            
+        if pips is not None:
+            notes_parts.append(f"{pips:+} pips")
+            
+        if duration:
+            hrs = duration // 60
+            mins = duration % 60
+            dur_str = f"{hrs}h {mins}m" if hrs else f"{mins}m"
+            notes_parts.append(f"{dur_str}")
+            
+        notes_str = " | ".join(notes_parts) if notes_parts else "Synced via MT5"
 
         dt_created = parse_metaapi_date(close_time_str)
 
@@ -266,24 +314,32 @@ def sync_metaapi_trades(
         )
 
         if existing_trade:
-            # Update values
+            # Update values with latest metrics
+            existing_trade.symbol = clean_sym
+            existing_trade.side = side
+            existing_trade.lot_size = volume
+            existing_trade.entry_price = open_price
             existing_trade.exit_price = close_price
             existing_trade.profit = profit
+            existing_trade.notes = notes_str
             existing_trade.mt5_account = current_user.metaapi_account_id
+            if target_account:
+                existing_trade.account_id = target_account.id
         else:
             # Insert new trade
             new_trade = Trade(
-                symbol=symbol,
+                symbol=clean_sym,
                 side=side,
                 lot_size=volume,
                 entry_price=open_price,
                 exit_price=close_price,
                 profit=profit,
-                notes=f"Synced via MetaApi (Position: {ticket})",
+                notes=notes_str,
                 external_id=ticket,
                 mt5_account=current_user.metaapi_account_id,
                 created_at=dt_created,
-                user_id=current_user.id
+                user_id=current_user.id,
+                account_id=target_account.id if target_account else None
             )
             db.add(new_trade)
             synced_count += 1
