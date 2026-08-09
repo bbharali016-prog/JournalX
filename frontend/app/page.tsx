@@ -88,6 +88,7 @@ const pricingPlans = [
     description: "Perfect for getting started.",
     priceMonthly: 0,
     priceYearly: 0,
+    totalYearly: 0,
     features: [
       "10 AI text prompts per day",
       "Basic journal entries",
@@ -100,8 +101,9 @@ const pricingPlans = [
   {
     name: "Pro",
     description: "For active traders who want more.",
-    priceMonthly: 19,
-    priceYearly: 15,
+    priceMonthly: 15,
+    priceYearly: 10,
+    totalYearly: 120,
     features: [
       "Unlimited trades",
       "MT4/MT5 account sync",
@@ -117,8 +119,9 @@ const pricingPlans = [
   {
     name: "Elite",
     description: "For traders who want the best.",
-    priceMonthly: 49,
-    priceYearly: 39,
+    priceMonthly: 35,
+    priceYearly: 30,
+    totalYearly: 360,
     features: [
       "Everything in Pro",
       "Multiple accounts",
@@ -453,7 +456,7 @@ export default function Home() {
                 >
                   Yearly
                   <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wide">
-                    Save 20%
+                    Save 33%
                   </span>
                 </button>
               </div>
@@ -514,7 +517,7 @@ export default function Home() {
                       </div>
                       {billingPeriod === "yearly" && price > 0 ? (
                         <p className="text-[10px] text-emerald-400 font-medium mt-1">
-                          Billed yearly (${price * 12}/year)
+                          Billed yearly (${plan.totalYearly}/year)
                         </p>
                       ) : (
                         <p className="text-[10px] text-slate-500 mt-1">Billed monthly</p>

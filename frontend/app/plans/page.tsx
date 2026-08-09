@@ -84,6 +84,7 @@ function PlansContent() {
       name: "Free",
       priceMonthly: 0,
       priceYearly: 0,
+      totalYearly: 0,
       description: "Best for testing the journal and basic coaching.",
       features: [
         "Trading journal",
@@ -95,8 +96,9 @@ function PlansContent() {
     },
     {
       name: "Pro",
-      priceMonthly: 19,
-      priceYearly: 15,
+      priceMonthly: 15,
+      priceYearly: 10,
+      totalYearly: 120,
       description: "For serious traders who want deeper insights.",
       features: [
         "Unlimited AI coaching",
@@ -109,8 +111,9 @@ function PlansContent() {
     },
     {
       name: "Elite",
-      priceMonthly: 49,
-      priceYearly: 39,
+      priceMonthly: 35,
+      priceYearly: 30,
+      totalYearly: 360,
       description: "For funded traders and power users.",
       features: [
         "Everything in Pro",
@@ -197,7 +200,7 @@ function PlansContent() {
             >
               Yearly
               <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wide">
-                Save 20%
+                Save 33%
               </span>
             </button>
           </div>
@@ -252,7 +255,7 @@ function PlansContent() {
 
                 {billingPeriod === "yearly" && price > 0 && (
                   <p className="text-[11px] text-emerald-400 font-semibold mt-1">
-                    Billed yearly (${price * 12}/year)
+                    Billed yearly (${plan.totalYearly}/year)
                   </p>
                 )}
 
