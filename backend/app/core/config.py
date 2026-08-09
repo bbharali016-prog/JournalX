@@ -9,8 +9,15 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str | None = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
     RESEND_API_KEY: str | None = None
-    FROM_EMAIL: str = "JournalX <onboarding@resend.dev>"
+    FROM_EMAIL: str = "JournalFX <support@journalforex.online>"
     MONGODB_URL: str = "mongodb://localhost:27017/journalx"
+
+    # SMTP Support (Gmail / Hostinger / Custom Domain)
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 465
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_USE_TLS: bool = False
 
     STRIPE_SECRET_KEY: str | None = None
     STRIPE_WEBHOOK_SECRET: str | None = None

@@ -80,9 +80,9 @@ export default function VerifyOtpPage() {
             Enter the 6 digit OTP sent to your email.
           </p>
 
-          {devOtp && (
+          {devOtp && process.env.NODE_ENV !== "production" && (
             <div className="mt-5 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100">
-              Dev OTP: <span className="font-semibold">{devOtp}</span>
+              Dev OTP (Local only): <span className="font-semibold">{devOtp}</span>
             </div>
           )}
 
