@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   SlidersHorizontal,
@@ -65,27 +65,89 @@ export default function AnalyticsPage() {
   const netProfit = overview?.net_profit ?? 0;
   const activeAccount = accounts?.find((a) => a.id === selectedAccountId);
   const startingBalance = selectedAccountId === null
-    ? (accounts?.reduce((sum, a) => sum + (a.account_size ?? 0), 0) || 10000)
-    : (activeAccount?.account_size ?? 10000);
-  const totalTradesCount = overview?.total_trades ?? 0;
+    ? (accounts?.reduce((sum, a) => sum + (a.account_size ?? 0), 0) || (accounts?.[0]?.account_size ?? 5000))
+    : (activeAccount?.account_size ?? 5000);
+  const totalTradesCount = overview?.total_trades ?? trades.length;
   const winRate = overview?.win_rate ?? 0;
   const profitFactor = overview?.profit_factor ?? 0;
   const expectancy = overview?.expectancy ?? 0;
-  const avgRR = overview?.avg_rr ?? 0;
   const maxDrawdown = overview?.max_drawdown ?? 0;
   const winStreak = overview?.win_streak ?? 0;
+  const profitGoal = activeAccount?.profit_target ?? 500;
 
   // Sorting trades for Top Winning / Losing
   const winningTrades = [...trades].filter((t) => t.profit > 0).sort((a, b) => b.profit - a.profit).slice(0, 3);
   const losingTrades = [...trades].filter((t) => t.profit < 0).sort((a, b) => a.profit - b.profit).slice(0, 3);
+
+  // Real Avg RR Calculation
+  const allWinners = trades.filter((t) => t.profit > 0);
+  const allLosers = trades.filter((t) => t.profit < 0);
+  const avgWinVal = allWinners.length > 0 ? allWinners.reduce((sum, t) => sum + t.profit, 0) / allWinners.length : 0;
+  const avgLossVal = allLosers.length > 0 ? Math.abs(allLosers.reduce((sum, t) => sum + t.profit, 0)) / allLosers.length : 0;
+  const calculatedAvgRR = avgLossVal > 0 ? (avgWinVal / avgLossVal).toFixed(2) : (avgWinVal > 0 ? "2.50" : "0.00");
+
+  // Dynamic Date Range from Trades
+  const dateRangeText = useMemo(() => {
+    if (trades.length === 0) return "Aug 1 — Aug 9, 2026";
+    const timestamps = trades.map((t) => new Date(t.created_at).getTime()).sort((a, b) => a - b);
+    const firstDate = new Date(timestamps[0]).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const lastDate = new Date(timestamps[timestamps.length - 1]).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    return `${firstDate} — ${lastDate}`;
+  }, [trades]);
+
+  // Dynamic Trading Hour Heatmap (7 days x 6 slots of 4 hours)
+  const tradingTimeHeatmap = useMemo(() => {
+    const grid = Array.from({ length: 7 }, () => Array(6).fill(0));
+    trades.forEach((t) => {
+      const d = new Date(t.created_at);
+      let dayIdx = d.getDay(); // 0 Sun, 1 Mon...
+      dayIdx = dayIdx === 0 ? 6 : dayIdx - 1; // Mon = 0, Sun = 6
+      const hour = d.getHours();
+      const slotIdx = Math.min(5, Math.floor(hour / 4));
+      grid[dayIdx][slotIdx] += t.profit;
+    });
+    return grid;
+  }, [trades]);
+
+  // Dynamic Duration Breakdown
+  const durationStats = useMemo(() => {
+    let scalping = 0;
+    let intraday = 0;
+    let swing = 0;
+
+    trades.forEach((t) => {
+      const notes = t.notes || "";
+      if (notes.includes("d ")) {
+        swing++;
+      } else if (notes.includes("h ") || notes.includes("m")) {
+        const hMatch = notes.match(/(\d+)h/);
+        const hours = hMatch ? parseInt(hMatch[1]) : 0;
+        if (hours >= 1) {
+          intraday++;
+        } else {
+          scalping++;
+        }
+      } else {
+        intraday++;
+      }
+    });
+
+    const total = trades.length || 1;
+    const scalpingPct = Math.round((scalping / total) * 100);
+    const intradayPct = Math.round((intraday / total) * 100);
+    const swingPct = Math.max(0, 100 - scalpingPct - intradayPct);
+
+    return { scalpingPct, intradayPct, swingPct };
+  }, [trades]);
 
   // Buy vs Sell stats
   const buyTrades = trades.filter((t) => t.side === "BUY");
   const sellTrades = trades.filter((t) => t.side === "SELL");
   const buyCount = buyTrades.length;
   const sellCount = sellTrades.length;
-  const buyPercent = totalTradesCount > 0 ? Math.round((buyCount / totalTradesCount) * 100) : 0;
-  const sellPercent = totalTradesCount > 0 ? Math.round((sellCount / totalTradesCount) * 100) : 0;
+  const totalTradesCountVal = totalTradesCount || 1;
+  const buyPercent = Math.round((buyCount / totalTradesCountVal) * 100);
+  const sellPercent = Math.round((sellCount / totalTradesCountVal) * 100);
   const buyProfit = buyTrades.reduce((sum, t) => sum + t.profit, 0);
   const sellProfit = sellTrades.reduce((sum, t) => sum + t.profit, 0);
 
@@ -132,19 +194,16 @@ export default function AnalyticsPage() {
       };
     }
 
-    // Group net profit by ISO date YYYY-MM-DD
     const dailyProfit: { [date: string]: number } = {};
     trades.forEach((t) => {
       const isoDate = new Date(t.created_at).toISOString().split("T")[0];
       dailyProfit[isoDate] = (dailyProfit[isoDate] || 0) + t.profit;
     });
 
-    // Convert to sorted array of days
     const sortedDays = Object.entries(dailyProfit)
       .map(([date, profit]) => ({ date, profit }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // Calculate cumulative equity and balance
     let cumulativeEquity = 0;
     let cumulativeBalance = 0;
     const eqPoints: number[] = [0];
@@ -152,7 +211,7 @@ export default function AnalyticsPage() {
 
     sortedDays.forEach((day) => {
       cumulativeEquity += day.profit;
-      cumulativeBalance += day.profit * 0.96; // balance lag simulation
+      cumulativeBalance += day.profit * 0.96;
       eqPoints.push(cumulativeEquity);
       balPoints.push(cumulativeBalance);
     });
@@ -178,13 +237,11 @@ export default function AnalyticsPage() {
     const equityAreaPath = `${equityPath} L 400 160 L 0 160 Z`;
     const balanceAreaPath = `${balancePath} L 400 160 L 0 160 Z`;
 
-    // Map labels to display dates (e.g. "Jul 19")
     const labels = sortedDays.map((day) => {
       const d = new Date(day.date);
       return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
     });
 
-    // Make sure we have 5 labels evenly distributed
     const finalLabels: string[] = [];
     if (labels.length > 0) {
       finalLabels.push(labels[0]);
@@ -198,7 +255,6 @@ export default function AnalyticsPage() {
       }
     }
     
-    // Fallback if we have fewer labels
     while (finalLabels.length < 5) {
       finalLabels.push("");
     }
@@ -232,27 +288,22 @@ export default function AnalyticsPage() {
     maxCumulativeEquity,
   } = getEquityPoints();
 
-  // Dynamic Daily P&L bars
   const getDailyPnL = () => {
     const daily: { [date: string]: number } = {};
     trades.forEach((t) => {
-      const isoDate = new Date(t.created_at).toISOString().split("T")[0]; // YYYY-MM-DD
+      const isoDate = new Date(t.created_at).toISOString().split("T")[0];
       daily[isoDate] = (daily[isoDate] || 0) + t.profit;
     });
 
     const items = Object.entries(daily).map(([date, val]) => ({
-      date, // YYYY-MM-DD
+      date,
       val,
       p: val >= 0,
     }));
 
-    // Sort by ISO string chronologically (oldest to newest)
     items.sort((a, b) => a.date.localeCompare(b.date));
-
-    // Slice last 15 days
     const recentItems = items.slice(-15);
 
-    // Format for display
     return recentItems.map((item) => {
       const d = new Date(item.date);
       const displayDate = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -265,7 +316,6 @@ export default function AnalyticsPage() {
 
   const dailyPnLData = getDailyPnL();
 
-  // Dynamic Drawdown curves
   const getDrawdownCurve = () => {
     if (drawdownSeries.length === 0) {
       return {
@@ -291,7 +341,6 @@ export default function AnalyticsPage() {
 
   const drawdownCurve = getDrawdownCurve();
 
-  // Dynamic Calendar Heatmap generator
   const getCalendar = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -331,14 +380,12 @@ export default function AnalyticsPage() {
 
   const calendarData = getCalendar();
 
-  // Dynamic Session analysis slices
   const getSessionSlices = () => {
     if (sessionPerformance.length === 0) {
       return [
         { name: "London", value: 30, color: "#2dd4bf", profit: 0, trades: 0, winRate: "0%" },
         { name: "New York", value: 30, color: "#8b5cf6", profit: 0, trades: 0, winRate: "0%" },
-        { name: "Tokyo", value: 20, color: "#f43f5e", profit: 0, trades: 0, winRate: "0%" },
-        { name: "Sydney", value: 20, color: "#10b981", profit: 0, trades: 0, winRate: "0%" },
+        { name: "Asian", value: 20, color: "#f43f5e", profit: 0, trades: 0, winRate: "0%" },
       ];
     }
 
@@ -361,11 +408,9 @@ export default function AnalyticsPage() {
 
   const sessionSlices = getSessionSlices();
 
-  // Calculate dynamic circular slices path parameters
   const circumference = 251.2;
   let accumulatedPercent = 0;
 
-  // Trading days unique count
   const uniqueTradingDaysCount = new Set(
     trades.map((t) => new Date(t.created_at).toDateString())
   ).size;
@@ -399,9 +444,9 @@ export default function AnalyticsPage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-2 text-xs font-semibold text-slate-300">
-              Jul 1 — Jul 31, 2025
+              {dateRangeText}
             </span>
-            <button className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 transition">
+            <button className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 transition cursor-pointer">
               <SlidersHorizontal className="h-4 w-4 text-slate-400" />
               Filters
             </button>
@@ -413,7 +458,7 @@ export default function AnalyticsPage() {
           <MetricCard
             title="Net Profit"
             value={`$${netProfit.toLocaleString()}`}
-            change="+12.45%"
+            change={`+${((netProfit / (startingBalance || 5000)) * 100).toFixed(1)}% ROI`}
             positive={netProfit >= 0}
             chartData={getTrendData("profit")}
             color={netProfit >= 0 ? "text-emerald-400" : "text-rose-400"}
@@ -421,6 +466,7 @@ export default function AnalyticsPage() {
           <MetricCard
             title="Total Trades"
             value={totalTradesCount.toString()}
+            change={`${overview?.winning_trades || 0}W / ${overview?.losing_trades || 0}L`}
             type="bar"
             chartData={[5, 12, 8, 15, 6, 10, 14, 9]}
             color="text-blue-400"
@@ -428,15 +474,15 @@ export default function AnalyticsPage() {
           <MetricCard
             title="Win Rate"
             value={`${winRate}%`}
-            change="+5.22%"
-            positive={true}
+            change={`${overview?.winning_trades || 0} Wins`}
+            positive={winRate >= 50}
             chartData={getTrendData("winrate")}
             color="text-emerald-400"
           />
           <MetricCard
             title="Profit Factor"
             value={profitFactor.toString()}
-            change="+0.85"
+            change={profitFactor >= 1.5 ? "Healthy" : "Moderate"}
             positive={profitFactor >= 1.5}
             chartData={getTrendData("pf")}
             color="text-violet-400"
@@ -444,23 +490,23 @@ export default function AnalyticsPage() {
           <MetricCard
             title="Expectancy"
             value={`$${expectancy}`}
-            change="+4.32"
+            change={`+$${expectancy}/tr`}
             positive={expectancy >= 0}
             chartData={[15, 18, 14, 20, 17, 21, 19, 22]}
             color="text-emerald-400"
           />
           <MetricCard
             title="Avg RR"
-            value={avgRR.toString()}
-            change="+0.43"
-            positive={avgRR >= 1.5}
+            value={`1 : ${calculatedAvgRR}`}
+            change="Risk:Reward"
+            positive={Number(calculatedAvgRR) >= 1.5}
             chartData={[1.5, 1.6, 1.8, 1.7, 1.75, 1.9, 1.85, 1.91]}
             color="text-cyan-400"
           />
           <MetricCard
             title="Max Drawdown"
             value={`${maxDrawdown}%`}
-            change="-1.24%"
+            change={`$${maxDrawdown.toFixed(0)}`}
             positive={maxDrawdown < 10}
             chartData={[12, 10, 11, 9, 8.5, 9.2, 8.7, 8.42]}
             color="text-rose-400"
@@ -468,6 +514,7 @@ export default function AnalyticsPage() {
           <MetricCard
             title="Win Streak"
             value={winStreak.toString()}
+            change="Consecutive"
             chartData={[3, 4, 3, 5, 2, 6, 4, 7]}
             color="text-violet-400"
           />
@@ -528,20 +575,16 @@ export default function AnalyticsPage() {
                     <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0" />
                   </linearGradient>
                 </defs>
-                {/* Horizontal Grid lines */}
                 <line x1="0" y1="40" x2="400" y2="40" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
                 <line x1="0" y1="80" x2="400" y2="80" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
                 <line x1="0" y1="120" x2="400" y2="120" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
                 
-                {/* Balance Area & Line */}
                 <path d={balanceAreaPath} fill="url(#balanceGrad)" />
                 <path d={balancePath} fill="none" stroke="#2dd4bf" strokeWidth="1.5" strokeDasharray="3,3" />
 
-                {/* Equity Area & Line */}
                 <path d={equityAreaPath} fill="url(#equityGrad)" />
                 <path d={equityPath} fill="none" stroke="#8b5cf6" strokeWidth="2.5" />
 
-                {/* Hover Guide Line and Markers */}
                 {hoveredPointIdx !== null && eqCoords[hoveredPointIdx] && (
                   <>
                     <line
@@ -572,29 +615,25 @@ export default function AnalyticsPage() {
                   </>
                 )}
 
-                {/* Invisible Hover Rectangles Overlays */}
-                {eqCoords.length > 1 && eqCoords.map((p, idx) => {
-                  const prevX = idx === 0 ? p.x : eqCoords[idx - 1].x;
-                  const nextX = idx === eqCoords.length - 1 ? p.x : eqCoords[idx + 1].x;
-                  const startX = idx === 0 ? p.x : p.x - (p.x - prevX) / 2;
-                  const endX = idx === eqCoords.length - 1 ? p.x : p.x + (nextX - p.x) / 2;
-                  const width = endX - startX || 1;
-
-                  return (
-                    <rect
-                      key={idx}
-                      x={startX}
-                      y={0}
-                      width={width}
-                      height={160}
-                      fill="transparent"
-                      className="cursor-pointer"
-                      onMouseEnter={() => setHoveredPointIdx(idx)}
-                      onMouseMove={() => setHoveredPointIdx(idx)}
-                      onMouseLeave={() => setHoveredPointIdx(null)}
-                    />
-                  );
-                })}
+                <rect
+                  x="0"
+                  y="0"
+                  width="400"
+                  height="160"
+                  fill="transparent"
+                  className="cursor-crosshair"
+                  onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const closestIdx = eqCoords.reduce((prevIdx, currPoint, idx) => {
+                      const currDist = Math.abs((currPoint.x / 400) * rect.width - mouseX);
+                      const prevDist = Math.abs((eqCoords[prevIdx].x / 400) * rect.width - mouseX);
+                      return currDist < prevDist ? idx : prevIdx;
+                    }, 0);
+                    setHoveredPointIdx(closestIdx);
+                  }}
+                  onMouseLeave={() => setHoveredPointIdx(null)}
+                />
               </svg>
 
               {/* HTML Floating Tooltip Box */}
@@ -915,28 +954,25 @@ export default function AnalyticsPage() {
             <h3 className="text-sm font-semibold text-white mb-4">Best Trading Time (Hour)</h3>
             <div className="space-y-1.5 flex-1">
               <div className="flex text-[9px] font-semibold text-slate-500 pb-1 justify-between pl-6 pr-1">
-                <span>0</span>
-                <span>4</span>
-                <span>8</span>
-                <span>12</span>
-                <span>16</span>
-                <span>20</span>
+                <span>00:00</span>
+                <span>04:00</span>
+                <span>08:00</span>
+                <span>12:00</span>
+                <span>16:00</span>
+                <span>20:00</span>
               </div>
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => (
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, dIdx) => (
                 <div key={day} className="flex items-center gap-2 text-[10px]">
                   <span className="w-5 text-slate-500 font-semibold text-left">{day}</span>
                   <div className="flex-1 grid grid-cols-6 gap-1">
-                    {Array.from({ length: 6 }).map((_, hIdx) => {
+                    {tradingTimeHeatmap[dIdx].map((val: number, hIdx: number) => {
                       let cellBg = "bg-white/[0.03]";
-                      // Dynamic colored slots based on trade symbols
-                      if ((idx === 0 && hIdx === 3) || (idx === 1 && hIdx === 4) || (idx === 2 && hIdx === 3)) {
+                      if (val > 0) {
                         cellBg = "bg-emerald-500/80 shadow-[0_0_8px_rgba(16,185,129,0.3)]";
-                      } else if ((idx === 2 && hIdx === 2) || (idx === 3 && hIdx === 4) || (idx === 4 && hIdx === 3)) {
-                        cellBg = "bg-emerald-500/50";
-                      } else if ((idx === 0 && hIdx === 1) || (idx === 4 && hIdx === 5)) {
-                        cellBg = "bg-rose-500/60 shadow-[0_0_8px_rgba(239,68,68,0.2)]";
+                      } else if (val < 0) {
+                        cellBg = "bg-rose-500/70 shadow-[0_0_8px_rgba(239,68,68,0.2)]";
                       }
-                      return <div key={hIdx} className={`h-3 rounded-sm ${cellBg}`} />;
+                      return <div key={hIdx} className={`h-3 rounded-sm ${cellBg}`} title={`P&L: $${val.toFixed(2)}`} />;
                     })}
                   </div>
                 </div>
@@ -952,25 +988,25 @@ export default function AnalyticsPage() {
                 <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="10" />
                   <circle cx="50" cy="50" r="40" fill="none" stroke="#8b5cf6" strokeWidth="10"
-                    strokeDasharray="110 251.2" strokeDashoffset="0" />
+                    strokeDasharray={`${(durationStats.scalpingPct / 100) * circumference} ${circumference}`} strokeDashoffset="0" />
                   <circle cx="50" cy="50" r="40" fill="none" stroke="#3b82f6" strokeWidth="10"
-                    strokeDasharray="110 251.2" strokeDashoffset="-110" />
+                    strokeDasharray={`${(durationStats.intradayPct / 100) * circumference} ${circumference}`} strokeDashoffset={`-${(durationStats.scalpingPct / 100) * circumference}`} />
                   <circle cx="50" cy="50" r="40" fill="none" stroke="#2dd4bf" strokeWidth="10"
-                    strokeDasharray="31.2 251.2" strokeDashoffset="-220" />
+                    strokeDasharray={`${(durationStats.swingPct / 100) * circumference} ${circumference}`} strokeDashoffset={`-${((durationStats.scalpingPct + durationStats.intradayPct) / 100) * circumference}`} />
                 </svg>
               </div>
               <div className="grid grid-cols-3 gap-2 text-[9px] text-slate-400 mt-4 text-center w-full">
                 <div>
                   <span className="text-violet-400 font-bold block">Scalping</span>
-                  <span className="text-[10px] text-white font-medium">43.7%</span>
+                  <span className="text-[10px] text-white font-medium">{durationStats.scalpingPct}%</span>
                 </div>
                 <div>
                   <span className="text-blue-400 font-bold block">Intraday</span>
-                  <span className="text-[10px] text-white font-medium">45.3%</span>
+                  <span className="text-[10px] text-white font-medium">{durationStats.intradayPct}%</span>
                 </div>
                 <div>
                   <span className="text-teal-400 font-bold block">Swing</span>
-                  <span className="text-[10px] text-white font-medium">11.0%</span>
+                  <span className="text-[10px] text-white font-medium">{durationStats.swingPct}%</span>
                 </div>
               </div>
             </div>
@@ -980,15 +1016,25 @@ export default function AnalyticsPage() {
           <GlassPanel className="p-5 lg:col-span-2 flex flex-col justify-between">
             <h3 className="text-sm font-semibold text-white mb-4">Risk Management</h3>
             <div className="space-y-3 flex-1 justify-center flex flex-col">
-              <RiskProgressRow label="Average Risk" value="0.83%" percent={40} color="bg-emerald-500" />
-              <RiskProgressRow label="Max Risk" value="1.98%" percent={85} color="bg-amber-500" />
+              <RiskProgressRow
+                label="Average Risk"
+                value={`${startingBalance > 0 ? ((avgLossVal / startingBalance) * 100).toFixed(2) : "0.96"}%`}
+                percent={Math.min(100, Math.round(((avgLossVal / startingBalance) * 100) * 40))}
+                color="bg-emerald-500"
+              />
+              <RiskProgressRow
+                label="Max Risk"
+                value={`${startingBalance > 0 ? ((Math.abs(overview?.biggest_loss || 100) / startingBalance) * 100).toFixed(2) : "2.00"}%`}
+                percent={Math.min(100, Math.round(((Math.abs(overview?.biggest_loss || 100) / startingBalance) * 100) * 35))}
+                color="bg-amber-500"
+              />
               <RiskProgressRow
                 label="Avg Position Size"
                 value={`${trades.length > 0 ? (trades.reduce((sum, t) => sum + t.lot_size, 0) / trades.length).toFixed(2) : 0} Lots`}
                 percent={50}
                 color="bg-blue-500"
               />
-              <RiskProgressRow label="Best Risk Reward" value="1 : 2.45" percent={75} color="bg-violet-500" />
+              <RiskProgressRow label="Avg Risk Reward" value={`1 : ${calculatedAvgRR}`} percent={75} color="bg-violet-500" />
             </div>
           </GlassPanel>
 
@@ -1003,22 +1049,26 @@ export default function AnalyticsPage() {
             <div className="space-y-3 text-[11px] text-slate-300 leading-relaxed flex-1 flex flex-col justify-center">
               <div className="flex items-start gap-2">
                 <Cpu className="h-3.5 w-3.5 shrink-0 text-violet-400 mt-0.5" />
-                <p>Your best performance comes from London session trades.</p>
+                <p>
+                  {sessionPerformance.length > 0
+                    ? `Your top session is ${sessionPerformance[0]?.session} with $${sessionPerformance[0]?.profit.toFixed(2)} profit.`
+                    : "Your trades are performing steadily across sessions."}
+                </p>
               </div>
               <div className="flex items-start gap-2">
                 <Clock className="h-3.5 w-3.5 shrink-0 text-violet-400 mt-0.5" />
                 <p>
-                  {buyPercent > sellPercent
-                    ? "Your Buy trades win rate is higher than Sell trades."
-                    : "Your Sell trades win rate is higher than Buy trades."}
+                  {buyProfit > sellProfit
+                    ? "Buy setups are generating higher net returns than Sell setups."
+                    : "Sell setups are generating higher net returns than Buy setups."}
                 </p>
               </div>
               <div className="flex items-start gap-2">
                 <Activity className="h-3.5 w-3.5 shrink-0 text-violet-400 mt-0.5" />
                 <p>
                   {symbolPerformance.length > 0
-                    ? `${symbolPerformance[0]?.symbol} is your most profitable pair.`
-                    : "Keep trading to get personalized pair statistics."}
+                    ? `${symbolPerformance[0]?.symbol} is your most profitable asset.`
+                    : "Keep trading to build symbol performance profiles."}
                 </p>
               </div>
             </div>
@@ -1110,19 +1160,19 @@ export default function AnalyticsPage() {
             <div className="space-y-4 flex-1 flex flex-col justify-center">
               <div>
                 <div className="flex items-center justify-between text-xs mb-1.5 font-medium">
-                  <span className="text-slate-400">Monthly Profit Goal</span>
+                  <span className="text-slate-400">Profit Target</span>
                   <span className="text-white">
-                    {Math.min(100, Math.max(0, Math.round((netProfit / 5000) * 100)))}%
+                    {Math.min(100, Math.max(0, Math.round((netProfit / profitGoal) * 100)))}%
                   </span>
                 </div>
                 <div className="flex items-baseline gap-1 text-sm font-bold text-white">
                   ${Math.round(netProfit)}{" "}
-                  <span className="text-xs text-slate-500 font-normal">/ $5,000</span>
+                  <span className="text-xs text-slate-500 font-normal">/ ${profitGoal.toLocaleString()}</span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-white/5 mt-2.5 overflow-hidden">
                   <div
                     className="h-full bg-emerald-500 rounded-full"
-                    style={{ width: `${Math.min(100, Math.max(0, Math.round((netProfit / 5000) * 100)))}%` }}
+                    style={{ width: `${Math.min(100, Math.max(0, Math.round((netProfit / profitGoal) * 100)))}%` }}
                   />
                 </div>
               </div>
