@@ -35,30 +35,40 @@ def send_otp_email(email: str, otp: str, purpose: str):
 
     # 1. Try sending via SMTP if configured (Gmail / Hostinger / Custom Domain)
     if settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASSWORD:
+        clean_user = settings.SMTP_USER.strip().strip("'").strip('"')
+        clean_pass = settings.SMTP_PASSWORD.replace(" ", "").strip().strip("'").strip('"')
+        clean_host = settings.SMTP_HOST.strip().strip("'").strip('"')
+        clean_from = settings.FROM_EMAIL or clean_user
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = clean_from
+        msg["To"] = email
+
+        part = MIMEText(html_content, "html")
+        msg.attach(part)
+
+        # Attempt 1: Try Port 465 (SSL)
         try:
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = settings.FROM_EMAIL or settings.SMTP_USER
-            msg["To"] = email
-
-            part = MIMEText(html_content, "html")
-            msg.attach(part)
-
-            if settings.SMTP_PORT == 465 and not settings.SMTP_USE_TLS:
-                context = ssl.create_default_context()
-                with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, context=context, timeout=12) as server:
-                    server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-                    server.sendmail(settings.SMTP_USER, [email], msg.as_string())
-            else:
-                with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=12) as server:
-                    server.starttls()
-                    server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-                    server.sendmail(settings.SMTP_USER, [email], msg.as_string())
-
-            print(f"OTP Email successfully sent via SMTP to {email}")
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(clean_host, 465, context=context, timeout=10) as server:
+                server.login(clean_user, clean_pass)
+                server.sendmail(clean_user, [email], msg.as_string())
+            print(f"OTP Email successfully sent via SMTP (Port 465 SSL) to {email}")
             return True
-        except Exception as smtp_err:
-            print(f"SMTP email sending failed: {smtp_err}")
+        except Exception as ssl_err:
+            print(f"SMTP Port 465 SSL failed: {ssl_err}, attempting Port 587 STARTTLS...")
+
+        # Attempt 2: Try Port 587 (TLS)
+        try:
+            with smtplib.SMTP(clean_host, 587, timeout=10) as server:
+                server.starttls()
+                server.login(clean_user, clean_pass)
+                server.sendmail(clean_user, [email], msg.as_string())
+            print(f"OTP Email successfully sent via SMTP (Port 587 TLS) to {email}")
+            return True
+        except Exception as tls_err:
+            print(f"SMTP Port 587 TLS failed: {tls_err}")
 
     # 2. Try sending via Resend HTTP API if RESEND_API_KEY is configured
     if settings.RESEND_API_KEY:

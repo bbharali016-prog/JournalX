@@ -18,8 +18,11 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
     if (!loading) {
       if (!user) {
         router.push("/login");
+      } else if (user.is_admin) {
+        if (pathname !== "/admin" && pathname !== "/settings") {
+          router.push("/admin");
+        }
       } else if (!user.is_admin && pathname === "/admin") {
-        // Normal users cannot visit /admin
         router.push("/dashboard");
       }
     }
