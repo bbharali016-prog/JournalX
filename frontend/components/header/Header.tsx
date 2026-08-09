@@ -95,13 +95,13 @@ export default function Header({ onMenuToggle }: HeaderProps) {
             </Link>
           )}
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden border border-white/10 text-slate-300 hover:bg-white/5 md:inline-flex"
+          <Link
+            href="/calendar"
+            className="hidden items-center justify-center h-9 w-9 rounded-xl border border-white/10 text-slate-300 transition hover:bg-white/5 hover:text-white md:inline-flex"
+            title="Trading Calendar"
           >
             <CalendarRange className="h-4 w-4" />
-          </Button>
+          </Link>
 
           <NotificationButton />
 
@@ -109,11 +109,14 @@ export default function Header({ onMenuToggle }: HeaderProps) {
             <UserMenu />
           </div>
 
-          {/* Hidden on mobile, shown on md+ screens */}
-          <button className="hidden md:inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10">
-            Jul 1 - Jul 7, 2025
+          {/* Dynamic Active Date Range linking to Calendar */}
+          <Link
+            href="/calendar"
+            className="hidden md:inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10 hover:border-violet-500/30"
+          >
+            <span>Aug 1 - Aug 9, 2026</span>
             <ChevronDown className="h-4 w-4 text-slate-400" />
-          </button>
+          </Link>
         </div>
       </div>
     </header>

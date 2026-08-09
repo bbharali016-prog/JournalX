@@ -15,11 +15,11 @@ export default function DashboardPage() {
           <WelcomeBanner />
           <StatsCards />
 
-          <div className="grid gap-6 xl:grid-cols-12">
-            <div className="xl:col-span-7">
+          <div className="grid gap-6 xl:grid-cols-12 items-stretch">
+            <div className="xl:col-span-7 flex flex-col">
               <EquityChart />
             </div>
-            <div className="xl:col-span-5 space-y-6">
+            <div className="xl:col-span-5 space-y-6 flex flex-col justify-between">
               <FundedAccountProgress />
               <MonthlyPerformanceChart />
             </div>
