@@ -252,7 +252,8 @@ function AdminContent() {
             onClick={() => {
               setActiveTab("inspector");
               if (!inspectingUser && usersList.length > 0) {
-                handleInspectUser(usersList[0].id);
+                const traderUser = usersList.find((u) => !u.is_admin) || usersList[0];
+                handleInspectUser(traderUser.id);
               }
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
