@@ -18,16 +18,9 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
     if (!loading) {
       if (!user) {
         router.push("/login");
-      } else if (user.is_admin) {
-        // Admins can only visit /admin and /settings
-        if (pathname !== "/admin" && pathname !== "/settings") {
-          router.push("/admin");
-        }
-      } else {
+      } else if (!user.is_admin && pathname === "/admin") {
         // Normal users cannot visit /admin
-        if (pathname === "/admin") {
-          router.push("/dashboard");
-        }
+        router.push("/dashboard");
       }
     }
   }, [user, loading, router, pathname]);

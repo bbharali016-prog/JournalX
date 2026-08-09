@@ -129,8 +129,8 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          {(user?.is_admin ? adminMenu : menu).map((item) => {
+        <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-1">
+          {menu.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
 
@@ -139,7 +139,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
                 key={item.name}
                 href={item.href}
                 onClick={() => setMobileOpen?.(false)}
-                className={`mb-1 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-all
+                className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-all
                   ${
                     active
                       ? "border border-violet-400/20 bg-gradient-to-r from-violet-500/20 to-cyan-500/10 text-white shadow-lg shadow-violet-500/10"
@@ -152,10 +152,33 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
               </Link>
             );
           })}
+
+          {user?.is_admin && (
+            <Link
+              href="/admin"
+              onClick={() => setMobileOpen?.(false)}
+              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-all mt-2 border border-violet-500/30 bg-violet-500/10
+                ${
+                  pathname === "/admin"
+                    ? "bg-violet-500/25 text-white shadow-lg shadow-violet-500/20 border-violet-400/50"
+                    : "text-violet-300 hover:bg-violet-500/20 hover:text-white"
+                }`}
+            >
+              <Shield className="h-[18px] w-[18px] text-violet-400" />
+              {(mobileOpen || !collapsed) && (
+                <div className="flex items-center justify-between flex-1">
+                  <span>Admin Panel</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-md bg-violet-500/30 text-violet-200">
+                    Master
+                  </span>
+                </div>
+              )}
+            </Link>
+          )}
         </nav>
 
 
-      {!collapsed && !user?.is_admin && (
+      {!collapsed && (
         <div className="px-4 pb-4">
           {user?.plan?.toLowerCase() === "elite" ? (
             <div className="rounded-3xl border border-emerald-400/20 bg-gradient-to-br from-emerald-500/20 via-[#0a1826] to-[#040912] p-5 shadow-2xl shadow-emerald-950/20">
