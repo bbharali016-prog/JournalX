@@ -161,3 +161,153 @@ def update_user_status(
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.delete("/users/{user_id}", dependencies=[Depends(get_current_admin)])
+def delete_user_admin(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Permanently delete a user and all their trades/accounts."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.is_admin:
+        raise HTTPException(status_code=400, detail="Cannot delete an admin user")
+
+    db.query(Trade).filter(Trade.user_id == user_id).delete()
+    db.query(Account).filter(Account.user_id == user_id).delete()
+    db.delete(user)
+    db.commit()
+    return {"message": f"User {user.email} successfully deleted"}
+
+
+@router.get("/users/{user_id}/details", dependencies=[Depends(get_current_admin)])
+def get_user_full_details(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Fetch complete account and trade records for any user on the platform."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    accounts = db.query(Account).filter(Account.user_id == user_id).all()
+    trades = db.query(Trade).filter(Trade.user_id == user_id).order_by(Trade.created_at.desc()).all()
+
+    total_trades = len(trades)
+    winning_trades = sum(1 for t in trades if t.profit > 0)
+    net_profit = sum(t.profit for t in trades)
+    win_rate = round((winning_trades / total_trades * 100), 1) if total_trades > 0 else 0.0
+
+    acc_list = []
+    for a in accounts:
+        acc_trades_count = sum(1 for t in trades if t.account_id == a.id)
+        acc_list.append({
+            "id": a.id,
+            "name": a.name,
+            "platform": a.platform,
+            "broker": a.broker,
+            "funded_firm": a.funded_firm,
+            "login_id": a.login_id,
+            "server": a.server,
+            "account_size": a.account_size,
+            "profit_target": a.profit_target,
+            "status": a.status,
+            "sync_enabled": a.sync_enabled,
+            "created_at": a.created_at,
+            "trades_count": acc_trades_count,
+        })
+
+    trade_list = []
+    for t in trades:
+        acc = next((a for a in accounts if a.id == t.account_id), None)
+        trade_list.append({
+            "id": t.id,
+            "symbol": t.symbol,
+            "side": t.side,
+            "lot_size": t.lot_size,
+            "entry_price": t.entry_price,
+            "exit_price": t.exit_price,
+            "profit": t.profit,
+            "notes": t.notes,
+            "created_at": t.created_at,
+            "account_id": t.account_id,
+            "account_name": acc.name if acc else "Default",
+        })
+
+    return {
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "plan": user.plan,
+            "is_active": user.is_active,
+            "is_admin": user.is_admin,
+            "metaapi_account_id": user.metaapi_account_id,
+        },
+        "stats": {
+            "total_trades": total_trades,
+            "winning_trades": winning_trades,
+            "net_profit": round(net_profit, 2),
+            "win_rate": win_rate,
+            "accounts_count": len(accounts),
+        },
+        "accounts": acc_list,
+        "trades": trade_list,
+    }
+
+
+@router.get("/trades", dependencies=[Depends(get_current_admin)])
+def get_all_platform_trades(
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
+    user_id: Optional[int] = Query(None),
+):
+    """Retrieve all trades across all users for live platform monitoring."""
+    query = db.query(Trade)
+    if user_id:
+        query = query.filter(Trade.user_id == user_id)
+
+    total_count = query.count()
+    offset = (page - 1) * limit
+    trades = query.order_by(Trade.created_at.desc()).offset(offset).limit(limit).all()
+
+    # Enrich with user info
+    trade_list = []
+    user_cache = {}
+    account_cache = {}
+
+    for t in trades:
+        if t.user_id not in user_cache:
+            user_cache[t.user_id] = db.query(User).filter(User.id == t.user_id).first()
+        u = user_cache[t.user_id]
+
+        if t.account_id and t.account_id not in account_cache:
+            account_cache[t.account_id] = db.query(Account).filter(Account.id == t.account_id).first()
+        acc = account_cache.get(t.account_id)
+
+        trade_list.append({
+            "id": t.id,
+            "user_id": t.user_id,
+            "user_name": u.full_name if u else "Unknown",
+            "user_email": u.email if u else "Unknown",
+            "account_name": acc.name if acc else "Default",
+            "symbol": t.symbol,
+            "side": t.side,
+            "lot_size": t.lot_size,
+            "entry_price": t.entry_price,
+            "exit_price": t.exit_price,
+            "profit": t.profit,
+            "notes": t.notes,
+            "created_at": t.created_at,
+        })
+
+    return {
+        "trades": trade_list,
+        "total_count": total_count,
+        "page": page,
+        "limit": limit,
+    }
+
