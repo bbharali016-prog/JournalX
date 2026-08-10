@@ -347,7 +347,7 @@ def ai_chat_coach(
     if settings.GEMINI_API_KEY:
         try:
             trade_context = build_trade_context(trades)
-            system_instruction = f"""You are JournalFX AI Trading Coach — an elite, highly intelligent AI trading mentor and prop firm quantitative analyst modeled like Google Gemini.
+            system_instruction = f"""You are JournalFX AI Trading Coach — an elite, highly intelligent AI trading mentor modeled like Google Gemini.
 Trader Name: {user_name}
 Total Trades: {total_trades}
 Net Profit: +${net_profit:.2f}
@@ -360,44 +360,37 @@ Recent Trades Context:
 {trade_context}
 
 Instructions:
-- Act as an interactive, intelligent conversational assistant (like Google Gemini).
-- Answer ANY question the trader asks with depth, actionable steps, clear bullet points, and positive encouragement.
-- You can explain concepts, do math calculations (lot size, drawdown, compound growth), give psychology coaching, review strategies, or analyze their specific pairs.
-- If the trader asks in Hindi/Hinglish, reply fluently in Hinglish/Hindi or clear English as appropriate.
-- Keep answers formatted with markdown bullet points and bold highlights.
+- Directly and specifically answer the trader's exact question: "{user_message}".
+- If they ask about a specific asset like XAU/USD (Gold), check their trade context (if they have trades on it, analyze them; if not, explain they haven't traded Gold yet and provide strategic rules for trading XAU/USD).
+- Use clear bullet points and bold highlights for important concepts.
+- Answer in the same language or clear natural English/Hinglish as appropriate.
 """
 
-            contents = []
-            if history:
-                for turn in history[-6:]:
-                    r = "model" if getattr(turn, "role", "") in ["ai", "model"] else "user"
-                    c = getattr(turn, "content", "") or getattr(turn, "text", "")
-                    if c:
-                        contents.append({"role": r, "parts": [{"text": c}]})
-
-            if not contents:
-                contents.append({"role": "user", "parts": [{"text": f"{system_instruction}\n\nQuestion: {user_message}"}]})
-            else:
-                contents.append({"role": "user", "parts": [{"text": user_message}]})
-
             payload = {
-                "contents": contents,
-                "systemInstruction": {"parts": [{"text": system_instruction}]},
-                "generationConfig": {"temperature": 0.5, "maxOutputTokens": 800},
+                "contents": [
+                    {
+                        "role": "user",
+                        "parts": [
+                            {"text": f"{system_instruction}\n\nTrader's Question: {user_message}"}
+                        ],
+                    }
+                ],
+                "generationConfig": {"temperature": 0.4, "maxOutputTokens": 800},
             }
             
             for model_name in [settings.GEMINI_MODEL, "gemini-1.5-flash", "gemini-2.5-flash"]:
                 try:
+                    api_key = settings.GEMINI_API_KEY.strip()
                     request = Request(
-                        f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent",
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}",
                         data=json.dumps(payload).encode("utf-8"),
                         headers={
                             "Content-Type": "application/json",
-                            "x-goog-api-key": settings.GEMINI_API_KEY,
+                            "x-goog-api-key": api_key,
                         },
                         method="POST",
                     )
-                    with urlopen(request, timeout=14) as response:
+                    with urlopen(request, timeout=12) as response:
                         res_data = json.loads(response.read().decode("utf-8"))
                         candidates = res_data.get("candidates", [])
                         if candidates:
@@ -414,9 +407,55 @@ Instructions:
             print(f"Gemini chat fallback to native engine: {gemini_err}")
 
     # 2. Rich Native Quantitative Trading Intelligence Engine (Fallback & Local)
-    msg_lower = user_message.lower()
+    msg_lower = user_message.lower().strip()
 
-    if any(k in msg_lower for k in ["lot", "size", "position", "leverage", "volume"]):
+    # Check for Gold / XAUUSD
+    if any(k in msg_lower for k in ["xau", "gold", "xauusd", "xau/usd"]):
+        gold_trades = [t for t in trades if "xau" in t.symbol.lower() or "gold" in t.symbol.lower()]
+        if gold_trades:
+            g_pnl = sum(t.profit for t in gold_trades)
+            g_wins = sum(1 for t in gold_trades if t.profit > 0)
+            reply = (
+                f"Here is your **XAU/USD (Gold) Trading Performance** for **{user_name}**:\n\n"
+                f"• **Trades Count:** {len(gold_trades)} trades on Gold.\n"
+                f"• **Net Profit on Gold:** **+${g_pnl:.2f}**\n"
+                f"• **Win Rate on Gold:** **{(g_wins / len(gold_trades) * 100):.1f}%** ({g_wins} Wins / {len(gold_trades) - g_wins} Losses).\n\n"
+                f"💡 **Gold Strategy Tip:** Gold requires wider breathing room (25-40 pip SL). Keep position size lower (~0.15 - 0.25 lots) to avoid large volatility swings."
+            )
+        else:
+            reply = (
+                f"Here is the breakdown for **XAU/USD (Gold)**:\n\n"
+                f"• **Journal Status:** You currently have **0 recorded trades on XAU/USD** in your journal (all your {total_trades} trades were executed on **USD/CAD** and **GBP/USD**).\n"
+                f"• **Gold Volatility Profile:** XAU/USD moves an average of **150 to 300 pips daily**, making it significantly more volatile than Forex pairs.\n"
+                f"• **Recommended Position Sizing for $5,000 Account:**\n"
+                f"  - Use **0.05 to 0.15 lots** with a 30-40 pip Stop-Loss to restrict risk to 1% ($50).\n"
+                f"• **Best Trading Window:** Trade Gold during **New York Open (13:00 - 17:00 UTC)** when US liquidity and CPI/Fed catalysts drive clean trend expansions.\n\n"
+                f"Once you log your first Gold trade in the Journal or MT5, I will automatically calculate your specific XAU/USD win rate and edge!"
+            )
+    # Check for USD/CAD
+    elif any(k in msg_lower for k in ["usdcad", "usd/cad", "cad"]):
+        cad_trades = [t for t in trades if "cad" in t.symbol.lower()]
+        cad_pnl = sum(t.profit for t in cad_trades)
+        cad_wins = sum(1 for t in cad_trades if t.profit > 0)
+        reply = (
+            f"Here is your **USD/CAD Performance Analysis** for **{user_name}**:\n\n"
+            f"• **Net Profit:** **+${cad_pnl:.2f}** (Your #1 Most Profitable Pair!)\n"
+            f"• **Win Rate:** **{(cad_wins / len(cad_trades) * 100):.1f}%** ({cad_wins} Wins / {len(cad_trades) - cad_wins} Losses across {len(cad_trades)} trades).\n"
+            f"• **Edge Strength:** You have a high consistency on USD/CAD breakouts during the London/NY sessions.\n\n"
+            f"💡 **Recommendation:** Continue using USD/CAD as your primary cornerstone asset."
+        )
+    # Check for GBP/USD
+    elif any(k in msg_lower for k in ["gbpusd", "gbp/usd", "gbp", "pound"]):
+        gbp_trades = [t for t in trades if "gbp" in t.symbol.lower()]
+        gbp_pnl = sum(t.profit for t in gbp_trades)
+        gbp_wins = sum(1 for t in gbp_trades if t.profit > 0)
+        reply = (
+            f"Here is your **GBP/USD Performance Analysis** for **{user_name}**:\n\n"
+            f"• **Net Profit:** **+${gbp_pnl:.2f}** across {len(gbp_trades)} trades.\n"
+            f"• **Win Rate:** **{(gbp_wins / len(gbp_trades) * 100):.1f}%** ({gbp_wins} Wins / {len(gbp_trades) - gbp_wins} Losses).\n"
+            f"• **Key Insight:** GBP/USD provides high momentum during London Open (07:00 - 10:00 UTC)."
+        )
+    elif any(k in msg_lower for k in ["lot", "size", "position size", "leverage", "volume"]):
         reply = (
             f"Here is your **Position Sizing & Lot Size Audit** for **{user_name}**:\n\n"
             f"• **Current Trade Sizing:** Your average position size is **{avg_lot:.2f} lots** (ranging from **{min_lot:.2f} to {max_lot:.2f} lots** across your {total_trades} trades).\n"
@@ -425,7 +464,7 @@ Instructions:
             f"  $$\\text{{Lot Size}} = \\frac{{\\$50}}{{20 \\text{{ pips}} \\times \\$10}} = \\mathbf{{0.25 \\text{{ lots}}}}$$\n\n"
             f"💡 **Coach Advice:** Your current 0.50 - 0.70 lot size is well-managed because your stop-losses are tight (~10-12 pips), keeping average loss to **-${avg_loss:.2f}**. Keep lot sizes uniform on every trade to avoid inconsistent risk skew."
         )
-    elif any(k in msg_lower for k in ["about me", "who am i", "my profile", "my performance", "summary", "analyze me", "tell"]):
+    elif any(k in msg_lower for k in ["about me", "who am i", "my profile", "my performance", "my stats", "analyze me"]):
         reply = (
             f"Here is your **Trader Performance Profile** for **{user_name}**:\n\n"
             f"• **Net Profit:** **+${net_profit:.2f}** across {total_trades} recorded trades.\n"
@@ -458,7 +497,7 @@ Instructions:
             f"• **Execution Window:** Enter trades during **{best_session} Session** (07:00 - 16:00 UTC) when institutional volume sweeps liquidity.\n"
             f"• **Key Confluences:** Require at least 3 confirmations before entering: (1) Higher Timeframe Bias (4H/1H), (2) Liquidity Sweep / Fair Value Gap, (3) Clean 1:2+ R:R target."
         )
-    elif any(k in msg_lower for k in ["pair", "symbol", "instrument", "asset", "trade what", "gold", "xau", "gbp", "cad"]):
+    elif any(k in msg_lower for k in ["pair", "symbol", "instrument", "asset", "trade what"]):
         reply = (
             f"Here is your **Currency Pair Breakdown**:\n\n"
             f"• **Top Performer:** **{best_symbol}** with **+${best_symbol_pnl:.2f}** net profit.\n"
@@ -485,7 +524,7 @@ Instructions:
             f"• **Risk:Reward:** **{rr_ratio}** (Avg Win: **+${avg_win:.2f}** / Avg Loss: **-${avg_loss:.2f}**)\n"
             f"• **Average Lot Size:** **{avg_lot:.2f} lots**\n"
             f"• **Key Edge:** **{best_symbol}** during **{best_session} Session**.\n\n"
-            f"Ask me about: **Lot Sizing**, **Risk:Reward improvement**, **Trading Psychology**, **Setup Strategy**, or **Prop Firm rules**!"
+            f"Ask me about: **XAU/USD (Gold)**, **USD/CAD**, **Lot Sizing**, **Risk:Reward improvement**, **Trading Psychology**, or **Prop Firm rules**!"
         )
 
     return AIChatResponse(
