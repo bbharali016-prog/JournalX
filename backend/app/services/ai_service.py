@@ -70,6 +70,48 @@ def increment_daily_usage(
 def compute_rule_based_coach(trades: list[Trade], analytics: dict) -> dict:
     """Quantitative AI engine that generates deep personalized coaching based on real trade math."""
     total_trades = len(trades)
+    
+    if total_trades == 0:
+        return {
+            "summary": "No trades recorded yet. Connect an MT5 account or log your first manual trade in the Journal to generate personalized AI performance insights, risk diagnostics, and coaching recommendations.",
+            "strengths": [
+                "Clean slate ready for trade logging and discipline tracking.",
+                "Zero account drawdown — risk buffer fully intact.",
+                "Ready to implement structured Risk:Reward targets from Trade #1.",
+            ],
+            "weaknesses": [
+                "No trade sample size available yet to compute win rate or statistical edge.",
+                "Log at least 5 to 10 trades to unlock deep behavioral pattern analysis.",
+                "Ensure pre-planned Stop-Loss levels on upcoming setups.",
+            ],
+            "next_actions": [
+                "Log your first trade or connect an MT5 trading account.",
+                "Define your maximum risk per trade (recommended: 0.5% - 1.0%).",
+                "Select your primary currency pairs and trade during London or NY sessions.",
+            ],
+            "risk_note": "Awaiting trade history to compute risk metrics and drawdown.",
+            "coach_score": 0,
+            "discipline_score": 0,
+            "risk_score": 0,
+            "timing_score": 0,
+            "best_symbol": "None",
+            "worst_symbol": "None",
+            "best_session": "None",
+            "avg_rr_ratio": "N/A",
+            "insights": [
+                CoachInsight(
+                    title="Awaiting Trade Records",
+                    detail="Log your first trade in the Journal to activate real-time edge calculations and Risk:Reward analysis.",
+                    tone="warning",
+                ),
+                CoachInsight(
+                    title="Risk Management Engine Ready",
+                    detail="JournalFX monitors daily loss limits, drawdown, and session consistency automatically as soon as trades are logged.",
+                    tone="good",
+                ),
+            ],
+        }
+
     winning_trades = [t for t in trades if t.profit > 0]
     losing_trades = [t for t in trades if t.profit < 0]
     
@@ -247,6 +289,13 @@ def ai_chat_coach(
     trades = query.order_by(Trade.created_at.asc()).all()
 
     total_trades = len(trades)
+    
+    if total_trades == 0:
+        return AIChatResponse(
+            reply="You have not logged any trades yet on this account. Once you connect an MT5 account or log your first trade in the Journal, I will analyze your performance, win rate, best currency pairs, and Risk-to-Reward ratio!",
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        )
+
     winning_trades = [t for t in trades if t.profit > 0]
     losing_trades = [t for t in trades if t.profit < 0]
     net_profit = sum(t.profit for t in trades)

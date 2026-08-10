@@ -224,12 +224,36 @@ export default function CoachDashboard() {
         </div>
       </div>
 
+      {/* Zero trades onboarding banner */}
+      {stats.total_trades === 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-violet-500/30 bg-gradient-to-r from-violet-600/15 via-[#0c1322] to-indigo-600/10 p-5 backdrop-blur-xl shadow-xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-500/20 text-violet-300 border border-violet-500/30">
+              <Sparkles className="h-5 w-5 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">No Trades Logged on this Account Yet</h3>
+              <p className="text-xs text-slate-400">
+                Log your first manual trade or connect an MT5 account to generate live AI metrics, win rate, and edge calculations.
+              </p>
+            </div>
+          </div>
+          <a
+            href="/journal"
+            className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-violet-600/25 hover:bg-violet-500 transition"
+          >
+            <span>+ Log First Trade</span>
+            <ChevronRight className="h-4 w-4" />
+          </a>
+        </div>
+      )}
+
       {/* 4 Core Pillars Metrics */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Overall Coach Score"
-          value={`${coach.coach_score}/100`}
-          note={coachScoreLabel}
+          value={stats.total_trades === 0 ? "N/A" : `${coach.coach_score}/100`}
+          note={stats.total_trades === 0 ? "Awaiting trades" : coachScoreLabel}
           icon={Flame}
           accent="text-amber-400"
           bg="from-amber-500/10 to-orange-500/5"
@@ -237,8 +261,8 @@ export default function CoachDashboard() {
         />
         <MetricCard
           label="Discipline Health"
-          value={`${coach.discipline_score || 88}%`}
-          note="Stop-Loss execution adherence"
+          value={stats.total_trades === 0 ? "N/A" : `${coach.discipline_score || 0}%`}
+          note={stats.total_trades === 0 ? "Awaiting trades" : "Stop-Loss adherence"}
           icon={Shield}
           accent="text-emerald-400"
           bg="from-emerald-500/10 to-teal-500/5"
@@ -246,8 +270,8 @@ export default function CoachDashboard() {
         />
         <MetricCard
           label="Risk-to-Reward Ratio"
-          value={coach.avg_rr_ratio || `1 : ${stats.avg_rr.toFixed(2)}`}
-          note={`Avg Win $${stats.biggest_win > 0 ? stats.expectancy.toFixed(0) : "125"} vs Loss`}
+          value={stats.total_trades === 0 ? "N/A" : coach.avg_rr_ratio || "N/A"}
+          note={stats.total_trades === 0 ? "Awaiting trades" : `Expectancy: +$${stats.expectancy.toFixed(2)}`}
           icon={TrendingUp}
           accent="text-violet-400"
           bg="from-violet-500/10 to-indigo-500/5"
@@ -255,8 +279,8 @@ export default function CoachDashboard() {
         />
         <MetricCard
           label="Top Performing Asset"
-          value={coach.best_symbol || "USD/CAD"}
-          note={`Session edge: ${coach.best_session || "London"}`}
+          value={stats.total_trades === 0 ? "None" : coach.best_symbol || "None"}
+          note={stats.total_trades === 0 ? "No trades recorded" : `Session: ${coach.best_session || "None"}`}
           icon={Target}
           accent="text-cyan-400"
           bg="from-cyan-500/10 to-blue-500/5"
