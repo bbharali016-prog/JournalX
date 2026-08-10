@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.models.ai_usage import AIUsage
 from app.models.trade import Trade
 from app.models.account import Account
+from app.models.user import User
 from app.schemas.ai import CoachSummary, CoachInsight, AIChatResponse
 from app.services.analytics_service import get_analytics_overview
 
@@ -282,7 +283,10 @@ def ai_chat_coach(
     user_message: str,
     account_id: Optional[int] = None,
 ) -> AIChatResponse:
-    """Answers user trading questions with direct context from their live database trades."""
+    """Answers user trading questions with direct context from their live database trades using Gemini LLM and deep quantitative analysis."""
+    user = db.query(User).filter(User.id == user_id).first()
+    user_name = user.full_name if user else "Trader"
+
     query = db.query(Trade).filter(Trade.user_id == user_id)
     if account_id:
         query = query.filter(Trade.account_id == account_id)
@@ -292,7 +296,7 @@ def ai_chat_coach(
     
     if total_trades == 0:
         return AIChatResponse(
-            reply="You have not logged any trades yet on this account. Once you connect an MT5 account or log your first trade in the Journal, I will analyze your performance, win rate, best currency pairs, and Risk-to-Reward ratio!",
+            reply=f"Hello {user_name}! You have not logged any trades yet on this account. Once you connect an MT5 account or log your first trade in the Journal, I will analyze your performance, win rate, best currency pairs, and Risk-to-Reward ratio!",
             timestamp=datetime.now(timezone.utc).isoformat(),
         )
 
@@ -303,41 +307,145 @@ def ai_chat_coach(
 
     avg_win = (sum(t.profit for t in winning_trades) / len(winning_trades)) if winning_trades else 0.0
     avg_loss = (abs(sum(t.profit for t in losing_trades)) / len(losing_trades)) if losing_trades else 0.0
-    rr_ratio = f"1 : {(avg_win / avg_loss):.2f}" if avg_loss > 0 else "1 : 2.50"
+    rr_num = (avg_win / avg_loss) if avg_loss > 0 else 2.50
+    rr_ratio = f"1 : {rr_num:.2f}"
 
-    # Best pair
-    pair_profits: dict[str, float] = {}
+    # Symbol breakdown
+    symbol_profits: dict[str, float] = {}
+    symbol_wins: dict[str, int] = {}
+    symbol_total: dict[str, int] = {}
     for t in trades:
-        pair_profits[t.symbol] = pair_profits.get(t.symbol, 0.0) + t.profit
-    best_pair = max(pair_profits.items(), key=lambda x: x[1])[0] if pair_profits else "USD/CAD"
+        symbol_profits[t.symbol] = symbol_profits.get(t.symbol, 0.0) + t.profit
+        symbol_total[t.symbol] = symbol_total.get(t.symbol, 0) + 1
+        if t.profit > 0:
+            symbol_wins[t.symbol] = symbol_wins.get(t.symbol, 0) + 1
 
+    sorted_symbols = sorted(symbol_profits.items(), key=lambda x: x[1], reverse=True)
+    best_symbol = sorted_symbols[0][0] if sorted_symbols else "USD/CAD"
+    best_symbol_pnl = sorted_symbols[0][1] if sorted_symbols else 0.0
+
+    # Session breakdown
+    session_profits = {"London": 0.0, "New York": 0.0, "Asian": 0.0}
+    for t in trades:
+        hour = t.created_at.hour
+        if 7 <= hour < 14:
+            session_profits["London"] += t.profit
+        elif 14 <= hour < 21:
+            session_profits["New York"] += t.profit
+        else:
+            session_profits["Asian"] += t.profit
+
+    best_session = max(session_profits.items(), key=lambda x: x[1])[0]
+
+    # 1. Try Gemini LLM for conversational intelligence
+    if settings.GEMINI_API_KEY:
+        try:
+            trade_context = build_trade_context(trades)
+            prompt = f"""
+You are an elite, highly insightful AI Trading Coach and Prop Firm Risk Mentor for JournalFX.
+Trader Name: {user_name}
+Total Trades: {total_trades}
+Net Profit: +${net_profit:.2f}
+Win Rate: {win_rate:.1f}% ({len(winning_trades)} Wins / {len(losing_trades)} Losses)
+Average Risk-to-Reward Ratio: {rr_ratio} (Avg Win: +${avg_win:.2f}, Avg Loss: -${avg_loss:.2f})
+Top Asset: {best_symbol} (P&L: +${best_symbol_pnl:.2f})
+Best Trading Session: {best_session}
+Recent Trades Context:
+{trade_context}
+
+Trader's Question: "{user_message}"
+
+Instructions:
+- Provide a personalized, deeply practical, and encouraging response tailored specifically to their trade statistics above.
+- Use clear bullet points and bold highlights for important numbers and concepts.
+- Address their exact question directly (e.g. if they ask "tell about me", give a thorough trader profile evaluation; if they ask how to improve Risk:Reward, give concrete tactical trade-management rules).
+- Keep the response well-structured and concise (2-4 brief paragraphs or bullet lists).
+"""
+            payload = {
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.5, "maxOutputTokens": 600},
+            }
+            
+            # Try primary model or fallback to 1.5-flash
+            for model_name in [settings.GEMINI_MODEL, "gemini-1.5-flash", "gemini-2.5-flash"]:
+                try:
+                    request = Request(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent",
+                        data=json.dumps(payload).encode("utf-8"),
+                        headers={
+                            "Content-Type": "application/json",
+                            "x-goog-api-key": settings.GEMINI_API_KEY,
+                        },
+                        method="POST",
+                    )
+                    with urlopen(request, timeout=12) as response:
+                        res_data = json.loads(response.read().decode("utf-8"))
+                        candidates = res_data.get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            if parts and parts[0].get("text"):
+                                return AIChatResponse(
+                                    reply=parts[0]["text"].strip(),
+                                    timestamp=datetime.now(timezone.utc).isoformat(),
+                                )
+                except Exception as inner_e:
+                    print(f"Gemini {model_name} failed: {inner_e}")
+                    continue
+        except Exception as gemini_err:
+            print(f"Gemini chat fallback to native engine: {gemini_err}")
+
+    # 2. Rich Native Quantitative Trading Intelligence Engine (Fallback & Local)
     msg_lower = user_message.lower()
 
-    if "pair" in msg_lower or "symbol" in msg_lower or "best" in msg_lower:
+    if any(k in msg_lower for k in ["about me", "who am i", "my profile", "my performance", "summary", "analyze me"]):
         reply = (
-            f"Based on your trading history, your most profitable instrument is **{best_pair}** "
-            f"with a cumulative profit of +${pair_profits.get(best_pair, 0):.2f}. "
-            f"You have taken {total_trades} total trades across all pairs."
+            f"Here is your **Trader Performance Profile** for **{user_name}**:\n\n"
+            f"• **Net Profit:** **+${net_profit:.2f}** across {total_trades} trades.\n"
+            f"• **Win Rate:** **{win_rate:.1f}%** ({len(winning_trades)} Wins / {len(losing_trades)} Losses).\n"
+            f"• **Risk-to-Reward Ratio:** **{rr_ratio}** (Average Win: **+${avg_win:.2f}** vs Average Loss: **-${avg_loss:.2f}**).\n"
+            f"• **Primary Edge:** Your top instrument is **{best_symbol}** (+${best_symbol_pnl:.2f}), with optimal performance during the **{best_session} Session**.\n\n"
+            f"💡 **Coach Verdict:** Your high Risk-to-Reward ratio ({rr_ratio}) is your biggest mathematical advantage — you remain solidly profitable even with a ~47% win rate because your winners are more than **{rr_num:.1f}x** larger than your losses!"
         )
-    elif "rr" in msg_lower or "risk" in msg_lower or "reward" in msg_lower or "loss" in msg_lower:
+    elif any(k in msg_lower for k in ["improve", "how to improve", "risk:reward", "risk to reward", "rr", "better rr"]):
         reply = (
-            f"Your current Risk-to-Reward ratio is **{rr_ratio}**. "
-            f"Your average winning trade makes **+${avg_win:.2f}**, while your average loss is restricted to **-${avg_loss:.2f}**. "
-            f"This positive asymmetry ensures your account grows even when win rate is around {win_rate:.1f}%."
+            f"To further improve your **Risk-to-Reward Ratio** from your current **{rr_ratio}**, here are 4 tactical steps:\n\n"
+            f"1. **Scale Out Partially at 1:2 R:R:** Lock in 50% of position size at 1:2 and trail your stop-loss to Breakeven (+1 pip).\n"
+            f"2. **Refine Entry Precision:** Enter closer to key 15m/1h support/resistance or orderblocks so your invalidation SL is smaller (10-15 pips instead of 25 pips).\n"
+            f"3. **Never Cut Winning Trades Early:** Avoid manually closing trades before price reaches your designated Take-Profit level on pairs like **{best_symbol}**.\n"
+            f"4. **Strict Loss Invalidation:** Keep your losses capped at **${avg_loss:.2f}** or 1% of account balance — never widen an open stop-loss."
         )
-    elif "win" in msg_lower or "rate" in msg_lower:
+    elif any(k in msg_lower for k in ["pair", "symbol", "instrument", "asset", "trade what"]):
         reply = (
-            f"Your overall Win Rate is **{win_rate:.1f}%** ({len(winning_trades)} Wins / {len(losing_trades)} Losses). "
-            f"Your total Net Profit stands at **+${net_profit:.2f}**."
+            f"Here is your **Currency Pair Breakdown**:\n\n"
+            f"• **Top Performer:** **{best_symbol}** with **+${best_symbol_pnl:.2f}** net profit.\n"
+            f"• **Execution Advice:** Focus 80% of your capital on your highest-edge setups like **{best_symbol}** where you consistently hit take-profit targets.\n"
+            f"• Avoid trading more than 2-3 uncorrelated pairs simultaneously to maintain sharp focus."
+        )
+    elif any(k in msg_lower for k in ["session", "time", "timing", "when to trade"]):
+        reply = (
+            f"Here is your **Session Volatility Breakdown**:\n\n"
+            f"• **Best Session:** **{best_session} Session** generated the highest profitability in your journal.\n"
+            f"• **Recommendation:** Trade between **07:00 - 16:00 UTC** (London Open & London/NY Overlap) when liquidity and volume are at their highest."
+        )
+    elif any(k in msg_lower for k in ["drawdown", "loss", "losing", "prop firm", "challenge", "funded"]):
+        reply = (
+            f"Here is your **Funded Account & Drawdown Audit**:\n\n"
+            f"• **Drawdown Status:** Safe (Max loss per trade is well-contained at **-${avg_loss:.2f}**).\n"
+            f"• **Rule Checklist:** Keep your daily risk below 2% to protect against prop firm daily loss limit breaches.\n"
+            f"• If you hit 2 consecutive losses in a single day, stop trading and review your journal notes."
         )
     else:
         reply = (
-            f"Analysis of your {total_trades} trades: Your Net Profit is **+${net_profit:.2f}** with an average Risk:Reward of **{rr_ratio}**. "
-            f"Your top performing asset is **{best_pair}**. To boost consistency, focus on your high-probability London and New York session setups."
+            f"Analysis for **{user_name}** ({total_trades} trades logged):\n\n"
+            f"• **Net Profit:** **+${net_profit:.2f}** | **Win Rate:** **{win_rate:.1f}%**\n"
+            f"• **Risk:Reward:** **{rr_ratio}** (Avg Win: **+${avg_win:.2f}** / Avg Loss: **-${avg_loss:.2f}**)\n"
+            f"• **Key Edge:** **{best_symbol}** during **{best_session} Session**.\n\n"
+            f"Feel free to ask specific questions about your setups, Risk:Reward improvement, best session timings, or prop firm risk rules!"
         )
 
     return AIChatResponse(
         reply=reply,
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
+
 

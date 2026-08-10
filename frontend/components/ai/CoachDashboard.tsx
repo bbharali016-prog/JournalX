@@ -354,7 +354,7 @@ export default function CoachDashboard() {
                   }`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
+                    className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed whitespace-pre-line ${
                       msg.sender === "user"
                         ? "bg-violet-600 text-white rounded-br-none shadow-md shadow-violet-600/20"
                         : "border border-white/10 bg-[#111928] text-slate-200 rounded-bl-none shadow-md"
