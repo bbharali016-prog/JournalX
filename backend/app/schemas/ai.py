@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List, Optional
 
 
 class CoachInsight(BaseModel):
@@ -9,9 +10,27 @@ class CoachInsight(BaseModel):
 
 class CoachSummary(BaseModel):
     summary: str
-    strengths: list[str]
-    weaknesses: list[str]
-    next_actions: list[str]
+    strengths: List[str]
+    weaknesses: List[str]
+    next_actions: List[str]
     risk_note: str
     coach_score: int
-    insights: list[CoachInsight]
+    discipline_score: Optional[int] = 85
+    risk_score: Optional[int] = 90
+    timing_score: Optional[int] = 82
+    best_symbol: Optional[str] = "USD/CAD"
+    worst_symbol: Optional[str] = "N/A"
+    best_session: Optional[str] = "London"
+    avg_rr_ratio: Optional[str] = "1 : 2.60"
+    insights: List[CoachInsight]
+
+
+class AIChatRequest(BaseModel):
+    message: str
+    account_id: Optional[int] = None
+
+
+class AIChatResponse(BaseModel):
+    reply: str
+    timestamp: str
+
