@@ -354,13 +354,13 @@ export default function CoachDashboard() {
                   }`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed whitespace-pre-line ${
+                    className={`max-w-[88%] rounded-2xl p-3.5 text-xs leading-relaxed ${
                       msg.sender === "user"
                         ? "bg-violet-600 text-white rounded-br-none shadow-md shadow-violet-600/20"
                         : "border border-white/10 bg-[#111928] text-slate-200 rounded-bl-none shadow-md"
                     }`}
                   >
-                    {msg.text}
+                    <FormattedChatText text={msg.text} />
                   </div>
                   <span className="mt-1 text-[10px] text-slate-500 px-1">{msg.time}</span>
                 </div>
@@ -376,6 +376,8 @@ export default function CoachDashboard() {
             {/* Quick Prompt Suggestions */}
             <div className="mt-3 flex flex-wrap gap-2 pt-2 border-t border-white/5">
               {[
+                "tell about me",
+                "tell about lot size",
                 "Which pair is my most profitable?",
                 "How can I improve my Risk:Reward?",
                 "What session should I trade?",
@@ -594,3 +596,36 @@ function SummaryLine({
     </div>
   );
 }
+
+function FormattedChatText({ text }: { text: string }) {
+  const lines = text.split("\n");
+
+  return (
+    <div className="space-y-1.5">
+      {lines.map((line, idx) => {
+        if (!line.trim()) {
+          return <div key={idx} className="h-1.5" />;
+        }
+
+        // Split by markdown bold (**text**)
+        const parts = line.split(/(\*\*.*?\*\*)/g);
+
+        return (
+          <p key={idx} className="leading-relaxed">
+            {parts.map((part, pIdx) => {
+              if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
+                return (
+                  <strong key={pIdx} className="font-bold text-white">
+                    {part.slice(2, -2)}
+                  </strong>
+                );
+              }
+              return <span key={pIdx}>{part}</span>;
+            })}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
