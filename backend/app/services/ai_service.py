@@ -281,6 +281,7 @@ def ai_chat_coach(
     db: Session,
     user_id: int,
     user_message: str,
+    history: Optional[list] = None,
     account_id: Optional[int] = None,
 ) -> AIChatResponse:
     """Answers user trading questions with direct context from their live database trades using Gemini LLM and deep quantitative analysis."""
@@ -346,8 +347,7 @@ def ai_chat_coach(
     if settings.GEMINI_API_KEY:
         try:
             trade_context = build_trade_context(trades)
-            prompt = f"""
-You are an elite AI Trading Coach and Prop Firm Risk Mentor for JournalFX.
+            system_instruction = f"""You are JournalFX AI Trading Coach — an elite, highly intelligent AI trading mentor and prop firm quantitative analyst modeled like Google Gemini.
 Trader Name: {user_name}
 Total Trades: {total_trades}
 Net Profit: +${net_profit:.2f}
@@ -359,17 +359,31 @@ Best Trading Session: {best_session}
 Recent Trades Context:
 {trade_context}
 
-Trader's Question: "{user_message}"
-
 Instructions:
-- Provide an intelligent, deeply personalized response answering the trader's question directly based on their stats above.
-- If they ask about lot sizing, analyze their average lot size ({avg_lot:.2f} lots) and calculate safe lot sizing for a $5,000 account.
-- Use clear bullet points and bold highlights for numbers.
-- Keep the response professional, actionable, and encouraging (2-4 concise paragraphs/lists).
+- Act as an interactive, intelligent conversational assistant (like Google Gemini).
+- Answer ANY question the trader asks with depth, actionable steps, clear bullet points, and positive encouragement.
+- You can explain concepts, do math calculations (lot size, drawdown, compound growth), give psychology coaching, review strategies, or analyze their specific pairs.
+- If the trader asks in Hindi/Hinglish, reply fluently in Hinglish/Hindi or clear English as appropriate.
+- Keep answers formatted with markdown bullet points and bold highlights.
 """
+
+            contents = []
+            if history:
+                for turn in history[-6:]:
+                    r = "model" if getattr(turn, "role", "") in ["ai", "model"] else "user"
+                    c = getattr(turn, "content", "") or getattr(turn, "text", "")
+                    if c:
+                        contents.append({"role": r, "parts": [{"text": c}]})
+
+            if not contents:
+                contents.append({"role": "user", "parts": [{"text": f"{system_instruction}\n\nQuestion: {user_message}"}]})
+            else:
+                contents.append({"role": "user", "parts": [{"text": user_message}]})
+
             payload = {
-                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.4, "maxOutputTokens": 700},
+                "contents": contents,
+                "systemInstruction": {"parts": [{"text": system_instruction}]},
+                "generationConfig": {"temperature": 0.5, "maxOutputTokens": 800},
             }
             
             for model_name in [settings.GEMINI_MODEL, "gemini-1.5-flash", "gemini-2.5-flash"]:
@@ -383,7 +397,7 @@ Instructions:
                         },
                         method="POST",
                     )
-                    with urlopen(request, timeout=12) as response:
+                    with urlopen(request, timeout=14) as response:
                         res_data = json.loads(response.read().decode("utf-8"))
                         candidates = res_data.get("candidates", [])
                         if candidates:

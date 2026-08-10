@@ -37,14 +37,20 @@ export async function getCoachSummary(
   return data;
 }
 
+export interface ChatTurn {
+  role: "user" | "model" | "ai";
+  content: string;
+}
+
 export async function sendAIChatMessage(
   token: string,
   message: string,
+  history?: ChatTurn[],
   accountId?: number
 ): Promise<{ reply: string; timestamp: string }> {
   const { data } = await api.post(
     "/api/v1/ai/chat",
-    { message, account_id: accountId },
+    { message, history: history || [], account_id: accountId },
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -54,4 +60,5 @@ export async function sendAIChatMessage(
 
   return data;
 }
+
 

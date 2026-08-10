@@ -25,12 +25,19 @@ class CoachSummary(BaseModel):
     insights: List[CoachInsight]
 
 
+class ChatTurn(BaseModel):
+    role: str  # "user" or "model"
+    content: str
+
+
 class AIChatRequest(BaseModel):
     message: str
+    history: Optional[List[ChatTurn]] = []
     account_id: Optional[int] = None
 
 
 class AIChatResponse(BaseModel):
     reply: str
     timestamp: str
+
 

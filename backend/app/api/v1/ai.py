@@ -41,7 +41,14 @@ def ai_chat(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return ai_chat_coach(db, current_user.id, req.message, account_id=req.account_id)
+        return ai_chat_coach(
+            db,
+            current_user.id,
+            req.message,
+            history=req.history or [],
+            account_id=req.account_id,
+        )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
 
