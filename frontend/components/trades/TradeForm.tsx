@@ -303,16 +303,82 @@ export default function TradeForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs text-slate-400 font-medium pl-1">Profit</label>
-        <input
-          type="number"
-          step="any"
-          className="rounded-2xl border border-white/10 bg-[#0b1220] p-3 text-white placeholder:text-slate-500"
-          placeholder="e.g. 120.00"
-          value={form.profit}
-          onChange={(e) => updateField("profit", e.target.value)}
-          required
-        />
+        <div className="flex items-center justify-between pl-1">
+          <label className="text-xs text-slate-400 font-medium">Profit / Loss ($)</label>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                const val = form.profit.trim();
+                if (val.startsWith("-")) {
+                  updateField("profit", val.substring(1));
+                }
+              }}
+              className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                !form.profit.startsWith("-") && form.profit !== ""
+                  ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40"
+                  : "bg-white/5 text-slate-400 hover:text-white"
+              }`}
+            >
+              + Profit
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const val = form.profit.trim();
+                if (!val.startsWith("-") && val.length > 0) {
+                  updateField("profit", `-${val}`);
+                } else if (!val) {
+                  updateField("profit", "-");
+                }
+              }}
+              className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                form.profit.startsWith("-")
+                  ? "bg-rose-500/25 text-rose-300 border border-rose-500/40"
+                  : "bg-white/5 text-slate-400 hover:text-white"
+              }`}
+            >
+              - Loss
+            </button>
+          </div>
+        </div>
+        <div className="relative flex items-center">
+          <button
+            type="button"
+            onClick={() => {
+              const val = form.profit.trim();
+              if (val.startsWith("-")) {
+                updateField("profit", val.substring(1));
+              } else if (val) {
+                updateField("profit", `-${val}`);
+              } else {
+                updateField("profit", "-");
+              }
+            }}
+            className={`absolute left-2.5 px-2 py-1 rounded-lg text-xs font-bold transition border cursor-pointer z-10 ${
+              form.profit.startsWith("-")
+                ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
+                : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+            }`}
+            title="Click to toggle +/-"
+          >
+            {form.profit.startsWith("-") ? "- (Loss)" : "+ (Win)"}
+          </button>
+          <input
+            type="text"
+            className="w-full rounded-2xl border border-white/10 bg-[#0b1220] p-3 pl-20 text-white placeholder:text-slate-500 focus:border-violet-400/40 outline-none"
+            placeholder="e.g. 120.00 or -50.00"
+            value={form.profit}
+            onChange={(e) => {
+              const val = e.target.value;
+              // Allow numbers, decimal point, and leading minus
+              if (/^-?\d*\.?\d*$/.test(val)) {
+                updateField("profit", val);
+              }
+            }}
+            required
+          />
+        </div>
       </div>
 
       <div className="col-span-2 flex flex-col gap-1.5">
