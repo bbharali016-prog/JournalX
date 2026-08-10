@@ -426,16 +426,16 @@ export default function CoachDashboard() {
             {/* Quick Prompt Cards (Gemini Style) */}
             <div className="border-t border-white/5 bg-white/[0.01] px-6 pt-3 pb-2">
               <p className="text-[11px] font-semibold text-slate-400 mb-2 flex items-center gap-1">
-                <Zap className="h-3 w-3 text-amber-400" /> Suggested Prompts
+                <Zap className="h-3 w-3 text-amber-400" /> Quick Trading Prompts
               </p>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { label: "👤 Tell about me", prompt: "tell about me" },
-                  { label: "⚖️ Sizing & Lot Size", prompt: "tell about lot size and calculate safe sizing" },
+                  { label: "⚡ Instant Funded Rules", prompt: "explain instant funding model rules and prop firm drawdown" },
+                  { label: "📐 Margin & Leverage Formula", prompt: "explain margin rules and leverage calculation" },
+                  { label: "🧮 Lot & Loss Size Calculator", prompt: "calculate my lot size and loss formula for $5000 account" },
+                  { label: "🪙 Tell about XAUUSD", prompt: "tell about XAUUSD" },
                   { label: "📈 Boost Risk:Reward", prompt: "How can I improve my Risk:Reward ratio?" },
-                  { label: "🎯 Best Pairs & Sessions", prompt: "Which currency pair and session is my highest edge?" },
-                  { label: "🧠 Mindset & Discipline", prompt: "How to avoid revenge trading and stick to stop loss?" },
-                  { label: "🏆 Funded Challenge Readiness", prompt: "Am I ready to pass a prop firm challenge?" },
+                  { label: "👤 Tell about me", prompt: "tell about me" },
                 ].map((item) => (
                   <button
                     key={item.label}

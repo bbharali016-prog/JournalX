@@ -347,7 +347,7 @@ def ai_chat_coach(
     if settings.GEMINI_API_KEY:
         try:
             trade_context = build_trade_context(trades)
-            system_instruction = f"""You are JournalFX AI Trading Coach — an elite, highly intelligent AI trading mentor modeled like Google Gemini.
+            system_instruction = f"""You are JournalFX AI Trading Coach — an elite, highly intelligent AI trading mentor and quantitative analyst modeled like Google Gemini.
 Trader Name: {user_name}
 Total Trades: {total_trades}
 Net Profit: +${net_profit:.2f}
@@ -359,9 +359,23 @@ Best Trading Session: {best_session}
 Recent Trades Context:
 {trade_context}
 
+Comprehensive Trading Reference Knowledge:
+1. MARGIN & LEVERAGE RULES:
+   - Used Margin = (Lot Size * Contract Size) / Leverage
+   - Margin Level % = (Equity / Used Margin) * 100%
+   - Free Margin = Equity - Used Margin
+   - Margin Call (100%), Stop-Out Level (30%-50%)
+2. EXACT POSITION & LOSS SIZING FORMULA:
+   - Lot Size = (Account Balance * Risk %) / (Stop Loss Pips * Pip Value)
+   - For Forex Majors: Pip value = $10 per lot. For Gold (XAUUSD): $1 per 0.1 lot per point.
+3. FUNDED ACCOUNT MODELS:
+   - 2-Step Challenge: Phase 1 (8-10% target), Phase 2 (5% target), Daily Loss (5%), Max Drawdown (10%), Profit split (80-90%).
+   - 1-Step Challenge: Single Phase (9-10% target), Daily Loss (3-4%), Max Trailing Drawdown (6%).
+   - Instant Funding Model: No challenge/no profit target, instant profit split from Day 1 (70-80%), Max Trailing Drawdown (5-6%), Daily Loss (3-4%), 33% Consistency Rule.
+
 Instructions:
-- Directly and specifically answer the trader's exact question: "{user_message}".
-- If they ask about a specific asset like XAU/USD (Gold), check their trade context (if they have trades on it, analyze them; if not, explain they haven't traded Gold yet and provide strategic rules for trading XAU/USD).
+- Directly answer the trader's exact question: "{user_message}".
+- If they ask for calculations (lot size, margin, risk per pip), perform the exact step-by-step mathematical calculations.
 - Use clear bullet points and bold highlights for important concepts.
 - Answer in the same language or clear natural English/Hinglish as appropriate.
 """
@@ -409,8 +423,56 @@ Instructions:
     # 2. Rich Native Quantitative Trading Intelligence Engine (Fallback & Local)
     msg_lower = user_message.lower().strip()
 
-    # Check for Gold / XAUUSD
-    if any(k in msg_lower for k in ["xau", "gold", "xauusd", "xau/usd"]):
+    # 1. Margin & Leverage Rules
+    if any(k in msg_lower for k in ["margin", "leverage", "free margin", "margin level", "stop out"]):
+        reply = (
+            f"Here is the complete **Margin & Leverage Rules Breakdown** for **{user_name}**:\n\n"
+            f"• **1. Used Margin Formula:**\n"
+            f"  $$\\text{{Used Margin}} = \\frac{{\\text{{Lot Size}} \\times \\text{{Contract Size}}}}{{\\text{{Leverage}}}}$$\n"
+            f"  *Example:* 1.00 Lot EUR/USD on **1:100 leverage** = $\\frac{{100,000}}{{100}} = \\mathbf{{\\$1,000}}$ required margin.\n\n"
+            f"• **2. Margin Level % & Health:**\n"
+            f"  $$\\text{{Margin Level (\\%)}} = \\left(\\frac{{\\text{{Equity}}}}{{\\text{{Used Margin}}}}\\right) \\times 100$$\n"
+            f"  - **Safe Zone:** Above **500%** margin level.\n"
+            f"  - **Margin Call:** At **100%** (Broker warns you cannot open new positions).\n"
+            f"  - **Stop-Out:** At **30% - 50%** (Broker automatically force-closes your biggest losing trade).\n\n"
+            f"• **3. Free Margin:** $\\text{{Free Margin}} = \\text{{Equity}} - \\text{{Used Margin}}$ (Available capital to open trades)."
+        )
+    # 2. Instant Funding & Funded Account Models
+    elif any(k in msg_lower for k in ["instant", "funded", "prop firm", "challenge", "fund account", "goatfunded", "ftmo", "evaluation"]):
+        reply = (
+            f"Here is the comprehensive **Funded Account Models & Prop Firm Rules Guide**:\n\n"
+            f"### ⚡ 1. Rules-Based Instant Funding Model (No Evaluation):\n"
+            f"• **Profit Target:** **0% (No Target)** — You get immediate live funded credentials.\n"
+            f"• **Profit Split:** **70% to 80%** from your very first profitable trade.\n"
+            f"• **Max Trailing Drawdown:** Typically **5% to 6%** based on high-water mark equity.\n"
+            f"• **Daily Loss Limit:** **3% to 4%** daily drawdown buffer.\n"
+            f"• **Payout Frequency:** Bi-weekly or monthly on demand.\n\n"
+            f"### 🎯 2. Standard 2-Step Challenge Model:\n"
+            f"• **Phase 1 Target:** **8% - 10%** profit target (Unlimited or 30 days).\n"
+            f"• **Phase 2 Target:** **5%** profit target (60 days).\n"
+            f"• **Daily Loss Limit:** **5%** of starting day balance.\n"
+            f"• **Max Overall Loss:** **10%** static drawdown.\n"
+            f"• **Profit Split:** **80% to 90%** + 100% refund of evaluation fee.\n\n"
+            f"### 🛡️ Critical Funded Rules to Never Violate:\n"
+            f"1. **Daily Loss Rule:** Calculated on starting equity at 00:00 UTC (Floating losses count!).\n"
+            f"2. **Consistency Rule:** No single trade should generate more than **33%** of total payout profit.\n"
+            f"3. **Lot Size Uniformity:** Keep your lot size within a 2x band (e.g. 0.30 - 0.60 lots) to pass compliance review."
+        )
+    # 3. Lot Size & Loss Size Calculator
+    elif any(k in msg_lower for k in ["loss size", "lot size", "calculator", "calculate", "risk size", "sizing", "formula"]):
+        reply = (
+            f"Here is the **Exact Mathematical Lot Size & Loss Calculator**:\n\n"
+            f"### 📐 The Universal Position Sizing Formula:\n"
+            f"$$\\text{{Lot Size}} = \\frac{{\\text{{Account Balance}} \\times \\text{{Risk \\%}}}}{{\\text{{Stop Loss Pips}} \\times \\text{{Pip Value}}}}$$\n\n"
+            f"### 📊 Quick Calculation Table (Based on 1% Risk = $50 on a $5,000 Account):\n"
+            f"• **10 Pip Stop-Loss:** $\\frac{{\\$50}}{{10 \\times \\$10}} = \\mathbf{{0.50 \\text{{ lots}}}}$ ($5.00/pip)\n"
+            f"• **15 Pip Stop-Loss:** $\\frac{{\\$50}}{{15 \\times \\$10}} = \\mathbf{{0.33 \\text{{ lots}}}}$ ($3.33/pip)\n"
+            f"• **20 Pip Stop-Loss:** $\\frac{{\\$50}}{{20 \\times \\$10}} = \\mathbf{{0.25 \\text{{ lots}}}}$ ($2.50/pip)\n"
+            f"• **30 Pip Stop-Loss (Gold XAU/USD):** $\\frac{{\\$50}}{{30 \\times \\$10}} = \\mathbf{{0.16 \\text{{ lots}}}}$\n\n"
+            f"💡 **JournalFX Integration:** In your Journal, your average loss is **-${avg_loss:.2f}**, which perfectly respects the 1% risk rule on a $5,000 balance!"
+        )
+    # 4. Gold / XAUUSD
+    elif any(k in msg_lower for k in ["xau", "gold", "xauusd", "xau/usd"]):
         gold_trades = [t for t in trades if "xau" in t.symbol.lower() or "gold" in t.symbol.lower()]
         if gold_trades:
             g_pnl = sum(t.profit for t in gold_trades)
@@ -432,7 +494,7 @@ Instructions:
                 f"• **Best Trading Window:** Trade Gold during **New York Open (13:00 - 17:00 UTC)** when US liquidity and CPI/Fed catalysts drive clean trend expansions.\n\n"
                 f"Once you log your first Gold trade in the Journal or MT5, I will automatically calculate your specific XAU/USD win rate and edge!"
             )
-    # Check for USD/CAD
+    # 5. USD/CAD
     elif any(k in msg_lower for k in ["usdcad", "usd/cad", "cad"]):
         cad_trades = [t for t in trades if "cad" in t.symbol.lower()]
         cad_pnl = sum(t.profit for t in cad_trades)
@@ -444,7 +506,7 @@ Instructions:
             f"• **Edge Strength:** You have a high consistency on USD/CAD breakouts during the London/NY sessions.\n\n"
             f"💡 **Recommendation:** Continue using USD/CAD as your primary cornerstone asset."
         )
-    # Check for GBP/USD
+    # 6. GBP/USD
     elif any(k in msg_lower for k in ["gbpusd", "gbp/usd", "gbp", "pound"]):
         gbp_trades = [t for t in trades if "gbp" in t.symbol.lower()]
         gbp_pnl = sum(t.profit for t in gbp_trades)
@@ -455,15 +517,7 @@ Instructions:
             f"• **Win Rate:** **{(gbp_wins / len(gbp_trades) * 100):.1f}%** ({gbp_wins} Wins / {len(gbp_trades) - gbp_wins} Losses).\n"
             f"• **Key Insight:** GBP/USD provides high momentum during London Open (07:00 - 10:00 UTC)."
         )
-    elif any(k in msg_lower for k in ["lot", "size", "position size", "leverage", "volume"]):
-        reply = (
-            f"Here is your **Position Sizing & Lot Size Audit** for **{user_name}**:\n\n"
-            f"• **Current Trade Sizing:** Your average position size is **{avg_lot:.2f} lots** (ranging from **{min_lot:.2f} to {max_lot:.2f} lots** across your {total_trades} trades).\n"
-            f"• **Risk per Pip:** On Forex majors (e.g. USD/CAD, GBP/USD), a **0.70 lot** position represents approximately **$7.00 per pip** movement.\n"
-            f"• **Recommended Position Sizing Formula:** For a $5,000 account, risking 1% ($50 max risk) with a 20-pip Stop-Loss:\n"
-            f"  $$\\text{{Lot Size}} = \\frac{{\\$50}}{{20 \\text{{ pips}} \\times \\$10}} = \\mathbf{{0.25 \\text{{ lots}}}}$$\n\n"
-            f"💡 **Coach Advice:** Your current 0.50 - 0.70 lot size is well-managed because your stop-losses are tight (~10-12 pips), keeping average loss to **-${avg_loss:.2f}**. Keep lot sizes uniform on every trade to avoid inconsistent risk skew."
-        )
+    # 7. User Profile
     elif any(k in msg_lower for k in ["about me", "who am i", "my profile", "my performance", "my stats", "analyze me"]):
         reply = (
             f"Here is your **Trader Performance Profile** for **{user_name}**:\n\n"
@@ -510,7 +564,7 @@ Instructions:
             f"• **Best Session:** **{best_session} Session** generated the highest profitability in your journal.\n"
             f"• **Recommendation:** Trade between **07:00 - 16:00 UTC** (London Open & London/NY Overlap) when liquidity and volume are at their highest."
         )
-    elif any(k in msg_lower for k in ["drawdown", "loss", "losing", "prop firm", "challenge", "funded", "eval"]):
+    elif any(k in msg_lower for k in ["drawdown", "loss", "losing", "prop firm", "challenge", "eval"]):
         reply = (
             f"Here is your **Funded Account & Drawdown Audit**:\n\n"
             f"• **Drawdown Status:** Safe (Max loss per trade is well-contained at **-${avg_loss:.2f}**).\n"
@@ -524,7 +578,7 @@ Instructions:
             f"• **Risk:Reward:** **{rr_ratio}** (Avg Win: **+${avg_win:.2f}** / Avg Loss: **-${avg_loss:.2f}**)\n"
             f"• **Average Lot Size:** **{avg_lot:.2f} lots**\n"
             f"• **Key Edge:** **{best_symbol}** during **{best_session} Session**.\n\n"
-            f"Ask me about: **XAU/USD (Gold)**, **USD/CAD**, **Lot Sizing**, **Risk:Reward improvement**, **Trading Psychology**, or **Prop Firm rules**!"
+            f"Ask me about: **Margin & Leverage Rules**, **Exact Lot/Loss Calculator**, **Instant vs 2-Step Funded Models**, **XAU/USD Gold**, or **Trading Psychology**!"
         )
 
     return AIChatResponse(
