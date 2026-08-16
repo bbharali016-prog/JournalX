@@ -529,11 +529,26 @@ function BacktestingContent() {
                 </div>
 
                 {/* Helpful Instruction Alert */}
-                <div className="bg-amber-500/5 border-b border-amber-500/20 px-5 py-2.5 text-[11px] text-amber-300/90 flex items-center gap-2">
-                  <HelpCircle className="h-4 w-4 shrink-0 text-amber-400 animate-pulse" />
-                  <span>
-                    <strong>Slicing Tip:</strong> TradingView widgets restrict direct chart-click slice events on external websites. Use the **Cut/Slice Date** selector above to set the backtesting time, or click the bottom-left TradingView logo to open native replay.
-                  </span>
+                <div className="bg-[#1e293b]/75 border-b border-white/10 px-5 py-4 text-xs text-slate-300 leading-relaxed space-y-3">
+                  <div className="flex items-start gap-2.5">
+                    <HelpCircle className="h-4.5 w-4.5 text-violet-400 shrink-0 mt-0.5 animate-pulse" />
+                    <div>
+                      <p className="font-bold text-white mb-1 flex items-center gap-1.5">
+                        <span>How to Backtest on Old/Historical Charts:</span>
+                      </p>
+                      <ul className="list-decimal pl-4 space-y-1.5 text-slate-400 text-[11px]">
+                        <li>
+                          <strong>Load Past Chart Bars:</strong> Click on the chart widget and scroll (drag) to the right to go back in time. Alternatively, click the <span className="text-violet-300 font-semibold">Calendar icon</span> at the bottom of the chart to jump directly to any old date (e.g. 2023/2024).
+                        </li>
+                        <li>
+                          <strong>Set Cut Date in Simulator:</strong> Select the same historical date/time in the <span className="text-violet-300 font-semibold">"Cut / Slice Date"</span> box above so your trade entry price automatically aligns.
+                        </li>
+                        <li>
+                          <strong>Start Slicing:</strong> Click <span className="text-violet-300 font-semibold">"Step"</span> or <span className="text-violet-300 font-semibold">"Play"</span> to simulate candle-by-candle price movement from that exact historical point!
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
