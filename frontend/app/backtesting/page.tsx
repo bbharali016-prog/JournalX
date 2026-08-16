@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useCurrentUser } from "@/components/auth/UserContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -11,14 +11,18 @@ import {
   FlaskConical,
   Sparkles,
   Loader2,
-  TrendingUp,
-  TrendingDown,
   Trash2,
   RefreshCw,
   Plus,
   Play,
+  Pause,
+  Square,
   CheckCircle,
   XCircle,
+  TrendingUp,
+  TrendingDown,
+  ChevronRight,
+  HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -60,13 +64,13 @@ const initialMessages: ChatMessage[] = [
 ];
 
 const AVAILABLE_SYMBOLS = [
-  { value: "FX:EURUSD", label: "EUR/USD (Euro / US Dollar)" },
-  { value: "FX:GBPUSD", label: "GBP/USD (Great British Pound / US Dollar)" },
-  { value: "OANDA:XAUUSD", label: "XAU/USD (Gold / US Dollar)" },
-  { value: "FX:USDCAD", label: "USD/CAD (US Dollar / Canadian Dollar)" },
-  { value: "BINANCE:BTCUSDT", label: "BTC/USDT (Bitcoin / Tether)" },
-  { value: "OANDA:US30USD", label: "US30 (Dow Jones Index)" },
-  { value: "OANDA:NAS100USD", label: "NAS100 (Nasdaq 100 Index)" },
+  { value: "FX:EURUSD", label: "EUR/USD (Euro / US Dollar)", basePrice: 1.0850, volatility: 0.0003 },
+  { value: "FX:GBPUSD", label: "GBP/USD (Great British Pound / US Dollar)", basePrice: 1.2650, volatility: 0.0004 },
+  { value: "OANDA:XAUUSD", label: "XAU/USD (Gold / US Dollar)", basePrice: 2350.00, volatility: 1.80 },
+  { value: "FX:USDCAD", label: "USD/CAD (US Dollar / Canadian Dollar)", basePrice: 1.3620, volatility: 0.0003 },
+  { value: "BINANCE:BTCUSDT", label: "BTC/USDT (Bitcoin / Tether)", basePrice: 67200.00, volatility: 85.00 },
+  { value: "OANDA:US30USD", label: "US30 (Dow Jones Index)", basePrice: 39500.00, volatility: 25.00 },
+  { value: "OANDA:NAS100USD", label: "NAS100 (Nasdaq 100 Index)", basePrice: 18500.00, volatility: 18.00 },
 ];
 
 function BacktestingContent() {
@@ -85,6 +89,16 @@ function BacktestingContent() {
   const [selectedSymbol, setSelectedSymbol] = useState("FX:EURUSD");
   const [startingBalance, setStartingBalance] = useState<number>(50000);
   const [simulatedTrades, setSimulatedTrades] = useState<SimulatedTrade[]>([]);
+
+  // Bar Replay Simulator State
+  const [isReplayMode, setIsReplayMode] = useState(false);
+  const [replayPrice, setReplayPrice] = useState(1.0850);
+  const [replayTime, setReplayTime] = useState<Date>(new Date());
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [replaySpeed, setReplaySpeed] = useState(1500); // ms per step
+  const [replayNotification, setReplayNotification] = useState<string | null>(null);
+
+  const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Simulator Form State
   const [tradeType, setTradeType] = useState<"BUY" | "SELL">("BUY");
@@ -120,6 +134,17 @@ function BacktestingContent() {
     localStorage.setItem("simulated_trades", JSON.stringify(updated));
   };
 
+  // Sync replay price when asset symbol changes
+  useEffect(() => {
+    const asset = AVAILABLE_SYMBOLS.find((s) => s.value === selectedSymbol);
+    if (asset) {
+      setReplayPrice(asset.basePrice);
+      if (isReplayMode) {
+        setEntryPrice(asset.basePrice.toString());
+      }
+    }
+  }, [selectedSymbol, isReplayMode]);
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
@@ -134,6 +159,119 @@ function BacktestingContent() {
 
     setMessages((prev) => [...prev, newMsg]);
     setInputMessage("");
+  };
+
+  // Start Bar Replay Session
+  const handleToggleReplayMode = () => {
+    if (!isReplayMode) {
+      setIsReplayMode(true);
+      const asset = AVAILABLE_SYMBOLS.find((s) => s.value === selectedSymbol);
+      const currentAssetPrice = asset ? asset.basePrice : 1.0850;
+      setReplayPrice(currentAssetPrice);
+      setEntryPrice(currentAssetPrice.toString());
+      setTradeResult("OPEN"); // Set default to RUNNING trade for simulation
+      setReplayTime(new Date(Date.now() - 24 * 3600 * 1000 * 5)); // Start 5 days ago
+      triggerNotification("Historical Bar Replay Active! Market is loaded 5 days in the past.");
+    } else {
+      setIsReplayMode(false);
+      setIsPlaying(false);
+      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+      setTradeResult("WIN");
+      setEntryPrice("");
+    }
+  };
+
+  const triggerNotification = (msg: string) => {
+    setReplayNotification(msg);
+    setTimeout(() => {
+      setReplayNotification(null);
+    }, 4500);
+  };
+
+  // Simulate 1 Step Forward (Next Historical Candle)
+  const handleStepForward = () => {
+    const asset = AVAILABLE_SYMBOLS.find((s) => s.value === selectedSymbol);
+    if (!asset) return;
+
+    // Calculate next simulated price using volatile random walk
+    const changePercent = (Math.random() - 0.48) * 2; // slightly biased upwards to match standard charts
+    const priceChange = changePercent * asset.volatility;
+    const newPrice = parseFloat((replayPrice + priceChange).toFixed(selectedSymbol.includes("XAU") ? 2 : 5));
+    
+    // Advance simulated time by 1 Hour
+    const newTime = new Date(replayTime.getTime() + 60 * 60 * 1000);
+
+    setReplayPrice(newPrice);
+    setReplayTime(newTime);
+
+    // Pre-fill Entry Price with new Replay price if in form
+    setEntryPrice(newPrice.toString());
+
+    // Evaluate open trades
+    const updatedTrades = simulatedTrades.map((trade) => {
+      if (trade.result !== "OPEN" || trade.symbol !== selectedSymbol) return trade;
+
+      let hitTarget = false;
+      let hitStop = false;
+      let finalPnL = 0;
+
+      const pipMultiplier = selectedSymbol.includes("JPY") ? 100 : selectedSymbol.includes("XAU") ? 1 : 10000;
+
+      if (trade.type === "BUY") {
+        if (trade.takeProfit > 0 && newPrice >= trade.takeProfit) {
+          hitTarget = true;
+          finalPnL = parseFloat(((trade.takeProfit - trade.entry) * pipMultiplier * 10 * trade.lots).toFixed(2));
+        } else if (trade.stopLoss > 0 && newPrice <= trade.stopLoss) {
+          hitStop = true;
+          finalPnL = parseFloat(((trade.stopLoss - trade.entry) * pipMultiplier * 10 * trade.lots).toFixed(2));
+        }
+      } else {
+        // SELL Trade
+        if (trade.takeProfit > 0 && newPrice <= trade.takeProfit) {
+          hitTarget = true;
+          finalPnL = parseFloat(((trade.entry - trade.takeProfit) * pipMultiplier * 10 * trade.lots).toFixed(2));
+        } else if (trade.stopLoss > 0 && newPrice >= trade.stopLoss) {
+          hitStop = true;
+          finalPnL = parseFloat(((trade.entry - trade.stopLoss) * pipMultiplier * 10 * trade.lots).toFixed(2));
+        }
+      }
+
+      if (hitTarget) {
+        triggerNotification(`🏆 Take Profit Hit! ${trade.symbol.split(":")[1]} ${trade.type} hit target at $${trade.takeProfit}. Profit: +$${finalPnL}`);
+        return { ...trade, result: "WIN", pnl: finalPnL } as SimulatedTrade;
+      }
+      if (hitStop) {
+        triggerNotification(`🚨 Stop Loss Hit! ${trade.symbol.split(":")[1]} ${trade.type} hit stop at $${trade.stopLoss}. Loss: $${finalPnL}`);
+        return { ...trade, result: "LOSS", pnl: finalPnL } as SimulatedTrade;
+      }
+
+      return trade;
+    });
+
+    // Check if any trade was updated/closed
+    const tradeWasClosed = updatedTrades.some((t, i) => t.result !== simulatedTrades[i].result);
+    if (tradeWasClosed) {
+      saveTrades(updatedTrades);
+    }
+  };
+
+  // Autoplay handler
+  useEffect(() => {
+    if (isPlaying) {
+      playIntervalRef.current = setInterval(() => {
+        handleStepForward();
+      }, replaySpeed);
+    } else {
+      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+    }
+
+    return () => {
+      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+    };
+  }, [isPlaying, replayPrice, replayTime, selectedSymbol, simulatedTrades, replaySpeed]);
+
+  const handleTogglePlay = () => {
+    setIsPlaying(!isPlaying);
   };
 
   // Add Simulated Trade
@@ -170,18 +308,21 @@ function BacktestingContent() {
       result: tradeResult,
       pnl: calculatedPnL,
       notes: tradeNotes,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: isReplayMode
+        ? replayTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
     const updated = [newTrade, ...simulatedTrades];
     saveTrades(updated);
 
-    // Reset Form fields
-    setEntryPrice("");
+    // Reset Form fields except Entry Price (if in replay)
+    if (!isReplayMode) setEntryPrice("");
     setStopLoss("");
     setTakeProfit("");
     setCustomPnL("");
     setTradeNotes("");
+    triggerNotification(`Simulated ${tradeType} Trade Added successfully!`);
   };
 
   const handleDeleteTrade = (id: string) => {
@@ -256,29 +397,106 @@ function BacktestingContent() {
         </div>
       </div>
 
+      {/* Replay Notification Banner */}
+      {replayNotification && (
+        <div className="rounded-2xl border border-violet-500/30 bg-violet-600/10 p-3.5 text-xs text-violet-300 font-semibold flex items-center justify-between animate-in slide-in-from-top duration-300">
+          <span>{replayNotification}</span>
+          <button onClick={() => setReplayNotification(null)} className="text-[10px] hover:text-white opacity-80 cursor-pointer">Dismiss</button>
+        </div>
+      )}
+
       {/* Backtesting Content Layout */}
       <div className="grid gap-6 xl:grid-cols-12">
         
         {/* LEFT PANEL: Chart Embed & Simulation Trade Ledger (8 Cols) */}
         <div className="xl:col-span-8 space-y-6">
           
-          {/* TradingView Chart with Instrument Switcher */}
+          {/* TradingView Chart with Instrument Switcher & Replay Panel */}
           <div className="rounded-3xl border border-white/8 bg-black/40 overflow-hidden shadow-2xl relative flex flex-col">
-            {/* Instrument Selection Bar */}
-            <div className="border-b border-white/5 bg-white/[0.02] px-4 py-3 flex items-center justify-between gap-4">
-              <span className="text-xs font-semibold text-slate-400">Select Sandbox Asset:</span>
-              <select
-                value={selectedSymbol}
-                onChange={(e) => setSelectedSymbol(e.target.value)}
-                className="rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-1.5 text-xs font-medium text-slate-200 outline-none hover:border-violet-500/50 transition cursor-pointer"
+            {/* Instrument Selection & Replay Toggle Bar */}
+            <div className="border-b border-white/5 bg-[#0b1220] px-5 py-4 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-400">Sandbox Asset:</span>
+                <select
+                  value={selectedSymbol}
+                  onChange={(e) => setSelectedSymbol(e.target.value)}
+                  className="rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2 text-xs font-semibold text-slate-200 outline-none hover:border-violet-500/50 transition cursor-pointer"
+                >
+                  {AVAILABLE_SYMBOLS.map((sym) => (
+                    <option key={sym.value} value={sym.value}>
+                      {sym.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Bar Replay Session Toggle Button */}
+              <button
+                onClick={handleToggleReplayMode}
+                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
+                  isReplayMode
+                    ? "bg-violet-600 border-violet-500 text-white shadow-md shadow-violet-500/25 animate-pulse"
+                    : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white"
+                }`}
               >
-                {AVAILABLE_SYMBOLS.map((sym) => (
-                  <option key={sym.value} value={sym.value}>
-                    {sym.label}
-                  </option>
-                ))}
-              </select>
+                <Sparkles className="h-4 w-4" />
+                <span>{isReplayMode ? "Stop Bar Replay" : "Start Bar Replay"}</span>
+              </button>
             </div>
+
+            {/* BAR REPLAY SIMULATED CONTROL OVERLAY PANEL */}
+            {isReplayMode && (
+              <div className="bg-[#0f172a] border-b border-white/15 px-5 py-4 flex flex-wrap items-center justify-between gap-4 animate-in slide-in-from-top duration-300">
+                <div className="flex items-center gap-6">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Simulated Price</span>
+                    <p className="text-base font-bold font-mono text-emerald-400 mt-0.5">
+                      ${replayPrice.toLocaleString("en-US", { minimumFractionDigits: selectedSymbol.includes("XAU") ? 2 : 5 })}
+                    </p>
+                  </div>
+                  <div className="h-8 w-px bg-white/10" />
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Simulated Time</span>
+                    <p className="text-xs font-semibold text-white mt-0.5">
+                      {replayTime.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} at {replayTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Replay Controls */}
+                <div className="flex items-center gap-2">
+                  {/* Play / Pause */}
+                  <button
+                    onClick={handleTogglePlay}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-white hover:bg-violet-500 transition shadow cursor-pointer"
+                    title={isPlaying ? "Pause Playback" : "Autoplay Candles"}
+                  >
+                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-white" />}
+                  </button>
+
+                  {/* Step Forward (Next candle) */}
+                  <button
+                    onClick={handleStepForward}
+                    className="flex h-9 px-3 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 text-slate-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                    title="Advance 1 Candle (Step Forward)"
+                  >
+                    <span>Step</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+
+                  <select
+                    value={replaySpeed}
+                    onChange={(e) => setReplaySpeed(Number(e.target.value))}
+                    className="rounded-xl border border-white/10 bg-[#050b18] px-2.5 py-2 text-[10px] font-bold text-slate-300 outline-none cursor-pointer"
+                  >
+                    <option value={1000}>1.0s / Bar</option>
+                    <option value={1500}>1.5s / Bar</option>
+                    <option value={2500}>2.5s / Bar</option>
+                    <option value={4000}>4.0s / Bar</option>
+                  </select>
+                </div>
+              </div>
+            )}
 
             {/* Chart Iframe */}
             <div className="relative min-h-[460px] h-[460px] w-full">
@@ -401,12 +619,19 @@ function BacktestingContent() {
           {/* TAB CONTENT 1: BACKTEST TRADE SIMULATOR */}
           {rightPanelTab === "simulator" && (
             <div className="flex-1 p-5 space-y-4">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-                  <Play className="h-3 w-3 text-violet-400" />
-                  Place Simulated Trade
-                </h3>
-                <p className="text-[11px] text-slate-500">Record a mock trade on the current asset to backtest your execution model.</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-0.5 flex items-center gap-1.5">
+                    <Play className="h-3 w-3 text-violet-400" />
+                    Place Simulated Trade
+                  </h3>
+                  <p className="text-[10px] text-slate-500">Record a mock trade in your session ledger.</p>
+                </div>
+                {isReplayMode && (
+                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-400 border border-emerald-500/20 uppercase tracking-wider animate-pulse">
+                    Live Simulator Price
+                  </span>
+                )}
               </div>
 
               <form onSubmit={handleAddSimulatedTrade} className="space-y-4 text-xs">
@@ -439,15 +664,18 @@ function BacktestingContent() {
                 {/* Input Fields */}
                 <div className="space-y-3">
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Entry Price</label>
+                    <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">
+                      Entry Price {isReplayMode && "(Locked to Replay Price)"}
+                    </label>
                     <input
                       type="number"
                       step="any"
                       required
+                      disabled={isReplayMode}
                       placeholder="e.g. 1.0854"
                       value={entryPrice}
                       onChange={(e) => setEntryPrice(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2.5 text-white placeholder-slate-600 outline-none focus:border-violet-500 transition"
+                      className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2.5 text-white placeholder-slate-600 outline-none focus:border-violet-500 disabled:opacity-70 transition font-mono"
                     />
                   </div>
 
@@ -460,7 +688,7 @@ function BacktestingContent() {
                         placeholder="e.g. 1.0820"
                         value={stopLoss}
                         onChange={(e) => setStopLoss(e.target.value)}
-                        className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2.5 text-white placeholder-slate-600 outline-none focus:border-violet-500 transition"
+                        className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2.5 text-white placeholder-slate-600 outline-none focus:border-violet-500 transition font-mono"
                       />
                     </div>
                     <div>
@@ -471,7 +699,7 @@ function BacktestingContent() {
                         placeholder="e.g. 1.0920"
                         value={takeProfit}
                         onChange={(e) => setTakeProfit(e.target.value)}
-                        className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2.5 text-white placeholder-slate-600 outline-none focus:border-violet-500 transition"
+                        className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2.5 text-white placeholder-slate-600 outline-none focus:border-violet-500 transition font-mono"
                       />
                     </div>
                   </div>
@@ -485,37 +713,46 @@ function BacktestingContent() {
                         required
                         value={lots}
                         onChange={(e) => setLots(e.target.value)}
-                        className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2.5 text-white placeholder-slate-600 outline-none focus:border-violet-500 transition"
+                        className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2.5 text-white placeholder-slate-600 outline-none focus:border-violet-500 transition font-mono"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Trade Result</label>
+                      <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Trade Status</label>
                       <select
                         value={tradeResult}
+                        disabled={isReplayMode}
                         onChange={(e) => setTradeResult(e.target.value as any)}
-                        className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3 py-2.5 text-white outline-none focus:border-violet-500 transition cursor-pointer"
+                        className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3 py-2.5 text-white outline-none focus:border-violet-500 disabled:opacity-75 transition cursor-pointer"
                       >
-                        <option value="WIN">WIN / TAKE PROFIT</option>
-                        <option value="LOSS">LOSS / STOP LOSS</option>
-                        <option value="OPEN">RUNNING / OPEN</option>
+                        {isReplayMode ? (
+                          <option value="OPEN">RUNNING / SIMULATING</option>
+                        ) : (
+                          <>
+                            <option value="WIN">WIN / TAKE PROFIT</option>
+                            <option value="LOSS">LOSS / STOP LOSS</option>
+                            <option value="OPEN">RUNNING / OPEN</option>
+                          </>
+                        )}
                       </select>
                     </div>
                   </div>
 
                   {/* Manual P&L override */}
-                  <div>
-                    <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase flex items-center justify-between">
-                      <span>Custom Profit / Loss ($)</span>
-                      <span className="text-[9px] text-slate-500 font-normal">Optional Override</span>
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 250.00 or -120.00"
-                      value={customPnL}
-                      onChange={(e) => setCustomPnL(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2.5 text-white placeholder-slate-600 outline-none focus:border-violet-500 transition"
-                    />
-                  </div>
+                  {!isReplayMode && (
+                    <div>
+                      <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase flex items-center justify-between">
+                        <span>Custom Profit / Loss ($)</span>
+                        <span className="text-[9px] text-slate-500 font-normal">Optional Override</span>
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 250.00 or -120.00"
+                        value={customPnL}
+                        onChange={(e) => setCustomPnL(e.target.value)}
+                        className="w-full rounded-xl border border-white/10 bg-[#050b18] px-3.5 py-2.5 text-white placeholder-slate-600 outline-none focus:border-violet-500 transition font-mono"
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Trade Notes / Confluences</label>
@@ -534,7 +771,7 @@ function BacktestingContent() {
                   className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3.5 font-bold text-white shadow-lg shadow-violet-600/20 hover:opacity-95 active:scale-[0.99] transition cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
-                  <span>Add to Session Ledger</span>
+                  <span>{isReplayMode ? "Add Simulated Trade" : "Add to Session Ledger"}</span>
                 </button>
               </form>
             </div>
