@@ -98,9 +98,12 @@ function BacktestingContent() {
   const [replaySpeed, setReplaySpeed] = useState(1500); // ms per step
   const [replayNotification, setReplayNotification] = useState<string | null>(null);
 
-  const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const formatDateForInput = (date: Date) => {
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
 
-  // Simulator Form State
+  const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [tradeType, setTradeType] = useState<"BUY" | "SELL">("BUY");
   const [entryPrice, setEntryPrice] = useState("");
   const [stopLoss, setStopLoss] = useState("");
@@ -446,56 +449,93 @@ function BacktestingContent() {
 
             {/* BAR REPLAY SIMULATED CONTROL OVERLAY PANEL */}
             {isReplayMode && (
-              <div className="bg-[#0f172a] border-b border-white/15 px-5 py-4 flex flex-wrap items-center justify-between gap-4 animate-in slide-in-from-top duration-300">
-                <div className="flex items-center gap-6">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Simulated Price</span>
-                    <p className="text-base font-bold font-mono text-emerald-400 mt-0.5">
-                      ${replayPrice.toLocaleString("en-US", { minimumFractionDigits: selectedSymbol.includes("XAU") ? 2 : 5 })}
-                    </p>
+              <>
+                <div className="bg-[#0f172a] border-b border-white/15 px-5 py-4 flex flex-wrap items-center justify-between gap-4 animate-in slide-in-from-top duration-300">
+                  <div className="flex flex-wrap items-center gap-6">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Simulated Price</span>
+                      <p className="text-base font-bold font-mono text-emerald-400 mt-0.5">
+                        ${replayPrice.toLocaleString("en-US", { minimumFractionDigits: selectedSymbol.includes("XAU") ? 2 : 5 })}
+                      </p>
+                    </div>
+                    <div className="h-8 w-px bg-white/10 hidden sm:block" />
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Simulated Time</span>
+                      <p className="text-xs font-semibold text-white mt-0.5">
+                        {replayTime.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} at {replayTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <div className="h-8 w-px bg-white/10 hidden sm:block" />
+                    {/* Cut Date & Time Picker */}
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-violet-400 tracking-wider">Cut / Slice Date</span>
+                      <input
+                        type="datetime-local"
+                        value={formatDateForInput(replayTime)}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            const newDate = new Date(e.target.value);
+                            setReplayTime(newDate);
+                            // Set base price or offset price realistically
+                            const asset = AVAILABLE_SYMBOLS.find((s) => s.value === selectedSymbol);
+                            if (asset) {
+                              // fluctuation mock
+                              const seed = newDate.getTime() % 100;
+                              const offset = (seed - 50) * (asset.volatility / 10);
+                              setReplayPrice(parseFloat((asset.basePrice + offset).toFixed(selectedSymbol.includes("XAU") ? 2 : 5)));
+                            }
+                            triggerNotification(`Chart timeline cut! Set to: ${newDate.toLocaleDateString()}`);
+                          }
+                        }}
+                        className="mt-0.5 rounded-lg border border-white/10 bg-[#050b18] px-2.5 py-1 text-xs text-slate-200 outline-none focus:border-violet-500 transition cursor-pointer font-mono"
+                      />
+                    </div>
                   </div>
-                  <div className="h-8 w-px bg-white/10" />
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Simulated Time</span>
-                    <p className="text-xs font-semibold text-white mt-0.5">
-                      {replayTime.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} at {replayTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </p>
+
+                  {/* Replay Controls */}
+                  <div className="flex items-center gap-2">
+                    {/* Play / Pause */}
+                    <button
+                      type="button"
+                      onClick={handleTogglePlay}
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-white hover:bg-violet-500 transition shadow cursor-pointer"
+                      title={isPlaying ? "Pause Playback" : "Autoplay Candles"}
+                    >
+                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-white" />}
+                    </button>
+
+                    {/* Step Forward (Next candle) */}
+                    <button
+                      type="button"
+                      onClick={handleStepForward}
+                      className="flex h-9 px-3 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 text-slate-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                      title="Advance 1 Candle (Step Forward)"
+                    >
+                      <span>Step</span>
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+
+                    <select
+                      value={replaySpeed}
+                      onChange={(e) => setReplaySpeed(Number(e.target.value))}
+                      className="rounded-xl border border-white/10 bg-[#050b18] px-2.5 py-2 text-[10px] font-bold text-slate-300 outline-none cursor-pointer"
+                    >
+                      <option value={1000}>1.0s / Bar</option>
+                      <option value={1500}>1.5s / Bar</option>
+                      <option value={2500}>2.5s / Bar</option>
+                      <option value={4000}>4.0s / Bar</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* Replay Controls */}
-                <div className="flex items-center gap-2">
-                  {/* Play / Pause */}
-                  <button
-                    onClick={handleTogglePlay}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-white hover:bg-violet-500 transition shadow cursor-pointer"
-                    title={isPlaying ? "Pause Playback" : "Autoplay Candles"}
-                  >
-                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-white" />}
-                  </button>
-
-                  {/* Step Forward (Next candle) */}
-                  <button
-                    onClick={handleStepForward}
-                    className="flex h-9 px-3 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 text-slate-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
-                    title="Advance 1 Candle (Step Forward)"
-                  >
-                    <span>Step</span>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </button>
-
-                  <select
-                    value={replaySpeed}
-                    onChange={(e) => setReplaySpeed(Number(e.target.value))}
-                    className="rounded-xl border border-white/10 bg-[#050b18] px-2.5 py-2 text-[10px] font-bold text-slate-300 outline-none cursor-pointer"
-                  >
-                    <option value={1000}>1.0s / Bar</option>
-                    <option value={1500}>1.5s / Bar</option>
-                    <option value={2500}>2.5s / Bar</option>
-                    <option value={4000}>4.0s / Bar</option>
-                  </select>
+                {/* Helpful Instruction Alert */}
+                <div className="bg-amber-500/5 border-b border-amber-500/20 px-5 py-2.5 text-[11px] text-amber-300/90 flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4 shrink-0 text-amber-400 animate-pulse" />
+                  <span>
+                    <strong>Slicing Tip:</strong> TradingView widgets restrict direct chart-click slice events on external websites. Use the **Cut/Slice Date** selector above to set the backtesting time, or click the bottom-left TradingView logo to open native replay.
+                  </span>
                 </div>
-              </div>
+              </>
             )}
 
             {/* Chart Iframe */}
