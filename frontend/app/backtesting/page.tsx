@@ -531,20 +531,23 @@ function BacktestingContent() {
                 {/* Helpful Instruction Alert */}
                 <div className="bg-[#1e293b]/75 border-b border-white/10 px-5 py-4 text-xs text-slate-300 leading-relaxed space-y-3">
                   <div className="flex items-start gap-2.5">
-                    <HelpCircle className="h-4.5 w-4.5 text-violet-400 shrink-0 mt-0.5 animate-pulse" />
+                    <HelpCircle className="h-4.5 w-4.5 text-amber-400 shrink-0 mt-0.5 animate-bounce" />
                     <div>
                       <p className="font-bold text-white mb-1 flex items-center gap-1.5">
-                        <span>How to Backtest on Old/Historical Charts:</span>
+                        <span className="text-amber-400">⚠️ Action Required: Visual Sync Needed!</span>
                       </p>
-                      <ul className="list-decimal pl-4 space-y-1.5 text-slate-400 text-[11px]">
+                      <p className="text-[11px] text-slate-300">
+                        TradingView's widget security does not allow our simulator to scroll the visual chart automatically. To load the old candles visually:
+                      </p>
+                      <ul className="list-decimal pl-4 mt-2 space-y-1.5 text-slate-400 text-[11px]">
                         <li>
-                          <strong>Load Past Chart Bars:</strong> Click on the chart widget and scroll (drag) to the right to go back in time. Alternatively, click the <span className="text-violet-300 font-semibold">Calendar icon</span> at the bottom of the chart to jump directly to any old date (e.g. 2023/2024).
+                          Click inside the chart area and press <kbd className="bg-black/50 px-1 py-0.5 rounded text-white font-mono text-[9px]">Alt + G</kbd> on your keyboard (or click the <span className="text-violet-300 font-semibold">Calendar icon</span> at the bottom of the chart).
                         </li>
                         <li>
-                          <strong>Set Cut Date in Simulator:</strong> Select the same historical date/time in the <span className="text-violet-300 font-semibold">"Cut / Slice Date"</span> box above so your trade entry price automatically aligns.
+                          Enter this date: <span className="text-emerald-400 font-mono font-bold bg-[#050b18] px-1.5 py-0.5 rounded border border-white/5">{replayTime.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}</span> and click "Go to".
                         </li>
                         <li>
-                          <strong>Start Slicing:</strong> Click <span className="text-violet-300 font-semibold">"Step"</span> or <span className="text-violet-300 font-semibold">"Play"</span> to simulate candle-by-candle price movement from that exact historical point!
+                          The visual chart will instantly jump to your cut date, matching the simulator price!
                         </li>
                       </ul>
                     </div>
