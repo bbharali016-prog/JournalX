@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useCurrentUser } from "@/components/auth/UserContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -31,11 +31,20 @@ const initialMessages: ChatMessage[] = [
 ];
 
 export default function BacktestingPage() {
-  const { user, loading } = useCurrentUser();
+  const { user } = useCurrentUser();
   const isElite = user?.plan?.toLowerCase()?.trim() === "elite";
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [inputMessage, setInputMessage] = useState("");
+  const [loadingChat, setLoadingChat] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoadingChat(false);
+    }, 850);
+    return () => clearTimeout(timer);
+  }, []);
+
 
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -183,7 +192,7 @@ export default function BacktestingPage() {
             </form>
 
             {/* Blurred Overlay lock for Non-Elite Members */}
-            {loading ? (
+            {loadingChat ? (
               <div className="absolute inset-0 bg-[#060b13]/85 backdrop-blur-[4px] flex flex-col items-center justify-center p-6 text-center z-10">
                 <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
                 <p className="mt-4 text-sm text-slate-400">Loading chat room...</p>
@@ -211,7 +220,6 @@ export default function BacktestingPage() {
 
           </div>
         </div>
-
       </div>
     </DashboardLayout>
   );
